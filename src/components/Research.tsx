@@ -54,6 +54,7 @@ export default function Research() {
   // Dynamic Publications Feed states
   const [publications, setPublications] = useState<ResearchCardType[]>([]);
   const [weeklyDigest, setWeeklyDigest] = useState<WeeklyDigestConfig | undefined>(undefined);
+  const [trendingTech, setTrendingTech] = useState<TechItem[]>(TRENDING_TECH_DEFAULTS);
   const [fetchLoading, setFetchLoading] = useState<boolean>(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
@@ -67,15 +68,78 @@ export default function Research() {
     try {
       setFetchLoading(true);
       setFetchError(null);
-      const response = await fetch('/research-feed.json');
-      if (!response.ok) {
-        throw new Error(`CRITICAL_FAIL: Status ${response.status} (${response.statusText || 'Internal Channel Failure'})`);
+
+      const [newsRes, papersRes, trendingRes] = await Promise.allSettled([
+        fetch('/data/news.json').then(r => r.ok ? r.json() : Promise.reject('News file missing')),
+        fetch('/data/papers.json').then(r => r.ok ? r.json() : Promise.reject('Papers file missing')),
+        fetch('/data/trending.json').then(r => r.ok ? r.json() : Promise.reject('Trending file missing'))
+      ]);
+
+      let newsList: any[] = [];
+      let papersList: any[] = [];
+      let trendingData: any = null;
+
+      if (newsRes.status === 'fulfilled' && newsRes.value?.news) {
+        newsList = newsRes.value.news;
       }
-      const data = await response.json();
-      const publicationsList = Array.isArray(data) ? data : (data?.research || []);
-      setPublications(publicationsList);
-      if (data?.weeklyDigest) {
-        setWeeklyDigest(data.weeklyDigest);
+      if (papersRes.status === 'fulfilled' && papersRes.value?.papers) {
+        papersList = papersRes.value.papers;
+      }
+      if (trendingRes.status === 'fulfilled') {
+        trendingData = trendingRes.value;
+      }
+
+      // Combine news and papers into standard publications array
+      const mappedNews = newsList.map((item: any) => ({
+        id: item.id,
+        category: item.category,
+        title: item.title,
+        summary: item.summary,
+        whyItMatters: item.whyItMatters,
+        industryImpact: item.industryImpact,
+        difficulty: item.difficulty,
+        readingTime: item.readingTime,
+        source: item.source,
+        publishedDate: item.publishedDate,
+        author: item.author,
+        technologyTags: item.technologyTags || [],
+        url: item.url,
+        featured: item.featured || false
+      }));
+
+      const mappedPapers = papersList.map((item: any) => ({
+        id: item.id,
+        category: "Research Papers", // Set a unified category name for filters
+        title: item.title,
+        summary: item.summary,
+        whyItMatters: item.applications,
+        industryImpact: item.industryRelevance,
+        difficulty: item.difficulty,
+        readingTime: item.estimatedReadingTime || "10 min read",
+        source: item.publication || item.conference || "IEEE/ACM",
+        publishedDate: item.publishedDate,
+        author: Array.isArray(item.authors) ? item.authors.join(", ") : (item.authors || "Unknown"),
+        technologyTags: item.keywords || [],
+        url: item.url,
+        featured: item.featured || false
+      }));
+
+      const combinedList = [...mappedNews, ...mappedPapers];
+      
+      // Sort combinedList by publishedDate descending (newest first)
+      combinedList.sort((a, b) => {
+        const dateA = a.publishedDate || "";
+        const dateB = b.publishedDate || "";
+        return dateB.localeCompare(dateA);
+      });
+
+      setPublications(combinedList);
+
+      if (trendingData?.weeklyDigest) {
+        setWeeklyDigest(trendingData.weeklyDigest);
+      }
+      if (trendingData?.technologies && Array.isArray(trendingData.technologies)) {
+        setTrendingTech(trendingData.technologies);
       }
     } catch (err: any) {
       setFetchError(err?.message || 'CRITICAL_FAIL: Unable to sync with research telemetry pipeline.');
@@ -618,7 +682,7 @@ export default function Research() {
 
         {/* SECTION 6: TRENDING TECHNOLOGIES */}
         <TrendingTechnologies 
-          technologies={TRENDING_TECH_DEFAULTS} 
+          technologies={trendingTech} 
         />
 
         {/* SECTION 7: WEEKLY DIGEST & WAFER OPTIMIZER */}

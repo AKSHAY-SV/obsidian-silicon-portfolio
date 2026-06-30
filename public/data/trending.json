@@ -1,0 +1,52 @@
+{
+  "technologies": [
+    {
+      "name": "Chiplets",
+      "desc": "High-density organic interposers and UCIe interconnect protocols connecting multi-die modular processors.",
+      "status": "Active Std"
+    },
+    {
+      "name": "HBM4",
+      "desc": "Next-gen High-Bandwidth Memory stacking with 2048-bit wide physical silicon interfaces and 3D vertical TSVs.",
+      "status": "HBM4 Spec"
+    },
+    {
+      "name": "GAAFET",
+      "desc": "Gate-All-Around nanosheets replacing legacy FinFET transistors under sub-2nm fabrication nodes.",
+      "status": "1.4nm GAA"
+    },
+    {
+      "name": "OpenLane",
+      "desc": "Open-source EDA synthesis flow targeting automated standard cell layout and timing verification.",
+      "status": "v2.5 Stable"
+    },
+    {
+      "name": "Sky130",
+      "desc": "SkyWater 130nm open-source PDK enabling accessible digital, analog, and RF silicon prototyping.",
+      "status": "Open PDK"
+    },
+    {
+      "name": "RISC-V",
+      "desc": "Open instruction set architecture powering custom processor cores, vector acceleration, and extension pipelines.",
+      "status": "Vector Ext"
+    },
+    {
+      "name": "Photonics",
+      "desc": "Silicon micro-combs utilizing light instead of copper for ultra-fast bus lanes and inter-rack communication.",
+      "status": "Opto-Bus"
+    }
+  ],
+  "weeklyDigest": {
+    "issue": 143,
+    "focus": "Silicon Co-Design, Backside Power Delivery & GAAFET Topologies",
+    "editorial": "As modern microelectronics approach physical scaling walls, the industry turns to revolutionary Backside Power Delivery Networks (BSPDN) and gate-all-around nano-sheet topologies. This week's compiled intelligence maps ASML's High-NA EUV delivery alongside groundbreaking speculative out-of-order RISC-V vector architectures."
+  },
+  "statistics": {
+    "weeklyArticles": 14,
+    "monthlyArticles": 52,
+    "mostDiscussedCompany": "Intel & TSMC",
+    "mostDiscussedTechnology": "High-NA EUV",
+    "researchActivityScore": 96,
+    "latestUpdate": "2026-06-30"
+  }
+}
