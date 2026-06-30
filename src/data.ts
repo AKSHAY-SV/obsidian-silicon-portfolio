@@ -147,10 +147,10 @@ end`
   },
   {
     id: 'helios-7-soc',
-    name: 'HELIOS-7_SOC',
+    name: 'RV32IM SoC – 5-Stage Pipelined RISC-V Processor',
     category: 'ASIC',
-    tagline: 'Multi-Core RISC-V Edge AI System on Chip (7nm FinFET)',
-    description: 'A fully integrated mixed-signal Edge AI SoC combining 4 cluster-coupled high-efficiency RISC-V application processors with a custom Systolic Array NPU Accelerator, sharing an L1/L2 coherence fabric and interfacing via high-speed APB/AXI4 interconnects.',
+    tagline: '5-Stage Pipelined RISC-V Processor System on Chip (7nm FinFET)',
+    description: 'A fully integrated mixed-signal 5-stage pipelined RISC-V processor co-designed with high-efficiency accelerators, sharing an L1/L2 coherence fabric and interfacing via high-speed APB/AXI4 interconnects.',
     techStack: ['Chisel', 'Verilog', 'TSMC 7nm PDK', 'Synopsys Design Compiler', 'Cadence Innovus'],
     image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=600&auto=format&fit=crop',
     metrics: {
@@ -162,7 +162,7 @@ end`
     },
     specs: [
       { label: 'Process Node', value: 'TSMC 7nm FinFET N7' },
-      { label: 'CPU Cluster', value: '4x RV64GCX Dual-Issue Out-of-Order Cores' },
+      { label: 'CPU Cluster', value: '5-Stage Pipelined RV32IM Cores' },
       { label: 'NPU Performance', value: '4.2 TOPS @ 800MHz INT8 Matrix Engine' },
       { label: 'Memory Host', value: 'Integrated LPDDR4/5 Physical Layer (PHY)' },
       { label: 'Interconnect', value: '128-bit AXI4 Non-blocking Ring Network' },
@@ -170,8 +170,8 @@ end`
     ],
     challenges: [
       {
-        problem: 'High IR drop in the core NPU region during peak 4.2 TOPS matrix workloads led to severe dynamic voltage fluctuations and setup-time errors.',
-        solution: 'Re-architected the power mesh using a dual-grid layout in Metal 7 & Metal 8, doubling standard cell tap densities and placing decaps adjacent to structural multiplier groups.'
+        problem: 'High IR drop in the core processor region during peak workloads led to severe dynamic voltage fluctuations and setup-time errors.',
+        solution: 'Re-architected the power mesh using a dual-grid layout in Metal 7 & Metal 8, doubling standard cell tap densities and placing decaps adjacent to structural groups.'
       },
       {
         problem: 'Clock skew across the 12.54 mm² die boundary exceeded 180ps, causing hold timing violations on deep FIFO registers.',
@@ -180,15 +180,15 @@ end`
     ],
     files: [
       {
-        name: 'Helios_Top.v',
-        path: 'soc/helios/Helios_Top.v',
+        name: 'RV32IM_SoC_Top.v',
+        path: 'soc/rv32im/RV32IM_SoC_Top.v',
         content: `// =================================================================
-// PROJECT: HELIOS-7_SOC
-// FILE: Helios_Top.v
+// PROJECT: RV32IM SoC – 5-Stage Pipelined RISC-V Processor
+// FILE: RV32IM_SoC_Top.v
 // DESCRIPTION: Top-Level ASIC Chip Envelope & Pin Mappings
 // =================================================================
 
-module Helios_Top (
+module RV32IM_SoC_Top (
     input  wire        pad_clk_p,
     input  wire        pad_clk_n,
     input  wire        pad_rst_n,

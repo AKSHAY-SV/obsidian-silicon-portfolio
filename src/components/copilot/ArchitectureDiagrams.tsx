@@ -223,7 +223,7 @@ export function SoCDiagram() {
       <DiagramModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        title="Helios-7 Edge AI System-on-Chip (SoC) Architectural Block Layout"
+        title="RV32IM SoC – 5-Stage Pipelined RISC-V Processor Architectural Block Layout"
         description="Physical multi-master interconnection network powered by custom high-performance AXI4 and APB busses."
       >
         <div className="flex flex-col md:flex-row gap-6 items-center w-full">

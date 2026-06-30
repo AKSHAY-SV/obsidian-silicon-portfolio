@@ -44,6 +44,25 @@ export default function App() {
   const [nodeSize, setNodeSize] = useState<string>('7nm FinFET');
   const [voltage, setVoltage] = useState<number>(0.675); // V
 
+  // Dynamic projects list state
+  const [projects, setProjects] = useState<Project[]>(PROJECTS);
+
+  useEffect(() => {
+    fetch('/projects/projects.json')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch JSON');
+        return res.json();
+      })
+      .then(data => {
+        if (Array.isArray(data)) {
+          setProjects(data);
+        }
+      })
+      .catch(err => {
+        console.warn('[App] Dynamic projects registry load failed, using fallback:', err);
+      });
+  }, []);
+
   // Resume Copy state
   const [resumeCopied, setResumeCopied] = useState(false);
 
@@ -93,7 +112,7 @@ export default function App() {
 Email: crazyplayz61@gmail.com
 Education: M.S. in Computer Engineering (Specialization: VLSI & Computer Architecture)
 Core Competencies: RTL Design, Physical Implementation, Formal Verification, Cache Coherence.
-Tapeouts: Helios-7 Edge AI SoC (TSMC 7nm), RV32IM Processor (Artix-7), L2 MESI Coherent Cache.`;
+Tapeouts: RV32IM SoC – 5-Stage Pipelined RISC-V Processor (TSMC 7nm), L2 MESI Coherent Cache.`;
     navigator.clipboard.writeText(resumeText);
     setResumeCopied(true);
     setTimeout(() => setResumeCopied(false), 2000);
@@ -101,7 +120,7 @@ Tapeouts: Helios-7 Edge AI SoC (TSMC 7nm), RV32IM Processor (Artix-7), L2 MESI C
 
   const filteredSearchResults = searchQuery.trim() === ''
     ? []
-    : PROJECTS.filter(p =>
+    : projects.filter(p =>
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.tagline.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.category.toLowerCase().includes(searchQuery.toLowerCase())
@@ -201,14 +220,14 @@ Tapeouts: Helios-7 Edge AI SoC (TSMC 7nm), RV32IM Processor (Artix-7), L2 MESI C
             {/* Comprehensive Toolchain Matrix */}
             <EngineeringToolchain />
 
-            {/* Section 3: Featured Project (Helios-7 SoC) */}
+            {/* Section 3: Featured Project (RV32IM SoC – 5-Stage Pipelined RISC-V Processor) */}
             <section className="py-16 border-b border-[rgba(255,255,255,0.06)]" id="featured-project-showcase">
               <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <span className="font-mono text-xs font-semibold uppercase tracking-widest text-[#a78bfa]">
                   Crown Jewel Showcase
                 </span>
                 <h2 className="mt-2 font-sans text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-                  FEATURED WORK: HELIOS-7_SOC
+                  FEATURED WORK: RV32IM SoC – 5-STAGE PIPELINED RISC-V PROCESSOR
                 </h2>
 
                 <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-2 items-center">
@@ -225,7 +244,7 @@ Tapeouts: Helios-7 Edge AI SoC (TSMC 7nm), RV32IM Processor (Artix-7), L2 MESI C
                     </div>
 
                     <p className="font-sans text-lg text-slate-300 leading-relaxed">
-                      Helios-7 is a multi-core Edge AI SoC integrating 4 cluster-coupled high-efficiency RISC-V application processors with a custom Systolic Array INT8 Matrix multiplier engine, sharing L1/L2 coherent memory caches and AXI4 non-blocking interconnect switches.
+                      RV32IM SoC is a 5-stage pipelined RISC-V processor co-designed with high-efficiency accelerators, sharing L1/L2 coherent memory caches and communicating via non-blocking AXI4 crossbar interconnect switches.
                     </p>
 
                     <div className="mt-6 space-y-3.5 font-sans text-sm text-slate-400">
@@ -434,7 +453,7 @@ Tapeouts: Helios-7 Edge AI SoC (TSMC 7nm), RV32IM Processor (Artix-7), L2 MESI C
         {activeTab === 'about' && <About />}
 
         {/* PROJECTS LIBRARY VIEW */}
-        {activeTab === 'projects' && <ProjectsLibrary />}
+        {activeTab === 'projects' && <ProjectsLibrary projects={projects} />}
 
         {/* RESEARCH VIEW */}
         {activeTab === 'research' && <Research />}
@@ -488,7 +507,7 @@ Tapeouts: Helios-7 Edge AI SoC (TSMC 7nm), RV32IM Processor (Artix-7), L2 MESI C
                 autoFocus
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Type 'RV32IM', 'Helios', or 'ASIC' to filter..."
+                placeholder="Type 'RV32IM', 'RISC-V', or 'ASIC' to filter..."
                 className="w-full rounded-md bg-[#0a0a0a] border border-[rgba(255,255,255,0.08)] pl-11 pr-4 py-2.5 font-mono text-sm text-white focus:outline-none focus:border-[#a78bfa]/50"
               />
             </div>
@@ -683,7 +702,7 @@ Tapeouts: Helios-7 Edge AI SoC (TSMC 7nm), RV32IM Processor (Artix-7), L2 MESI C
                 <div className="pl-6 space-y-2 text-slate-300">
                   <div className="flex items-start gap-1.5">
                     <span className="text-[#10b981] select-none shrink-0">•</span>
-                    <span className="block break-words"><strong className="text-white font-semibold">Helios-7 Edge AI SoC:</strong> Lead Floorplanner and physical power network router. Mapped using TSMC 7nm technology PDK libraries.</span>
+                    <span className="block break-words"><strong className="text-white font-semibold">RV32IM SoC – 5-Stage Pipelined RISC-V Processor:</strong> Lead Floorplanner and physical power network router. Mapped using TSMC 7nm technology PDK libraries.</span>
                   </div>
                   <div className="flex items-start gap-1.5">
                     <span className="text-[#10b981] select-none shrink-0">•</span>

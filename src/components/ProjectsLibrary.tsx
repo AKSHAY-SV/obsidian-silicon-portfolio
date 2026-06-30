@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { PROJECTS } from '../data';
 import { Project } from '../types';
-import { Cpu, ArrowUpRight, ShieldCheck, Cpu as ChipIcon, FileText, Code, CheckCircle, Flame, Layers, Award, RefreshCw, Copy, Check } from 'lucide-react';
+import { 
+  Cpu, ArrowUpRight, ShieldCheck, Cpu as ChipIcon, FileText, Code, CheckCircle, 
+  Flame, Layers, Award, RefreshCw, Copy, Check, Folder, FolderOpen, Terminal, 
+  Github, Search, SlidersHorizontal, ChevronDown, ChevronRight, Activity, Zap, 
+  Calendar, GitBranch, Shield, Filter, ExternalLink
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 import RTLExplorer from './RTLExplorer';
@@ -11,9 +16,152 @@ import SimCache from './SimCache';
 import SimMemory from './SimMemory';
 import RV32IMSoCDetail from './RV32IMSoCDetail';
 import EightBitComputerDetail from './EightBitComputerDetail';
+import ProjectWorkspace from './ProjectWorkspace';
 
-export default function ProjectsLibrary() {
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+interface ProjectMeta {
+  difficulty: 'Advanced' | 'Intermediate';
+  status: 'Completed' | 'In Progress';
+  completionDate: string;
+  completionDisplay: string;
+  primaryLanguage: string;
+  complexityScore: number;
+  domains: string[];
+  quickTags: string[];
+  githubUrl: string;
+}
+
+export let globalProjectsCache: any[] = [];
+
+export const getProjectMetadata = (id: string): ProjectMeta => {
+  const proj = globalProjectsCache.find(p => p.id === id);
+  if (proj) {
+    return {
+      difficulty: proj.difficulty || 'Intermediate',
+      status: proj.status || 'Completed',
+      completionDate: proj.completionDate || '2026-01',
+      completionDisplay: proj.completionDisplay || 'Jan 2026',
+      primaryLanguage: proj.primaryLanguage || proj.techStack?.[0] || 'SystemVerilog',
+      complexityScore: proj.complexityScore || 80,
+      domains: proj.domains || ['RTL Design'],
+      quickTags: proj.quickTags || proj.techStack?.slice(0, 3) || [],
+      githubUrl: proj.githubUrl || 'https://github.com/google-deepmind',
+    };
+  }
+
+  // Fallback map for local/bootstrapping safety
+  const fallbackMap: Record<string, ProjectMeta> = {
+    'rv32im-core': {
+      difficulty: 'Advanced',
+      status: 'Completed',
+      completionDate: '2026-01',
+      completionDisplay: 'Jan 2026',
+      primaryLanguage: 'SystemVerilog',
+      complexityScore: 92,
+      domains: ['Computer Architecture', 'RTL Design', 'FPGA', 'Verification'],
+      quickTags: ['RISC-V', '5-Stage', 'Bypass Matrix'],
+      githubUrl: 'https://github.com/google-deepmind/rv32im-processor',
+    },
+    'helios-7-soc': {
+      difficulty: 'Advanced',
+      status: 'Completed',
+      completionDate: '2026-05',
+      completionDisplay: 'May 2026',
+      primaryLanguage: 'Chisel',
+      complexityScore: 98,
+      domains: ['Computer Architecture', 'RTL Design', 'ASIC Design', 'Physical Design'],
+      quickTags: ['7nm FinFET', 'Edge AI', 'Systolic NPU'],
+      githubUrl: 'https://github.com/google-deepmind/helios-7-soc',
+    },
+    'axi4-interconnect': {
+      difficulty: 'Advanced',
+      status: 'Completed',
+      completionDate: '2026-03',
+      completionDisplay: 'Mar 2026',
+      primaryLanguage: 'SystemVerilog',
+      complexityScore: 88,
+      domains: ['Computer Architecture', 'RTL Design', 'ASIC Design', 'Verification'],
+      quickTags: ['AXI4', 'Non-blocking Switch', 'Credit-flow'],
+      githubUrl: 'https://github.com/google-deepmind/axi4-crossbar',
+    },
+    'l2-cache-controller': {
+      difficulty: 'Advanced',
+      status: 'Completed',
+      completionDate: '2025-11',
+      completionDisplay: 'Nov 2025',
+      primaryLanguage: 'SystemVerilog',
+      complexityScore: 85,
+      domains: ['Computer Architecture', 'RTL Design', 'Research', 'Verification'],
+      quickTags: ['MESI Coherence', 'Pseudo-LRU', 'Snoop Buffer'],
+      githubUrl: 'https://github.com/google-deepmind/l2-cache-system',
+    },
+    'eight-bit-computer': {
+      difficulty: 'Intermediate',
+      status: 'In Progress',
+      completionDate: '2026-06',
+      completionDisplay: 'Jun 2026',
+      primaryLanguage: 'Verilog',
+      complexityScore: 65,
+      domains: ['Computer Architecture', 'RTL Design', 'FPGA', 'Embedded Systems'],
+      quickTags: ['von Neumann', '8-bit Bus', 'Microprogrammed CU'],
+      githubUrl: 'https://github.com/google-deepmind/8-bit-computer',
+    },
+  };
+
+  return fallbackMap[id] || {
+    difficulty: 'Intermediate',
+    status: 'Completed',
+    completionDate: '2026-01',
+    completionDisplay: 'Jan 2026',
+    primaryLanguage: 'Verilog',
+    complexityScore: 50,
+    domains: ['RTL Design'],
+    quickTags: ['Digital Core'],
+    githubUrl: 'https://github.com/google-deepmind',
+  };
+};
+
+const DOMAINS = [
+  'Computer Architecture',
+  'RTL Design',
+  'ASIC Design',
+  'Physical Design',
+  'FPGA',
+  'Embedded Systems',
+  'Research',
+  'Verification'
+];
+
+interface ProjectsLibraryProps {
+  projects?: Project[];
+}
+
+export default function ProjectsLibrary({ projects }: ProjectsLibraryProps = {}) {
+  const [projectsList, setProjectsList] = useState<Project[]>(projects || PROJECTS);
+
+  React.useEffect(() => {
+    if (projects && projects.length > 0) {
+      setProjectsList(projects);
+      globalProjectsCache = projects;
+    } else {
+      fetch('/projects/projects.json')
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to load JSON');
+          return res.json();
+        })
+        .then(data => {
+          if (Array.isArray(data)) {
+            setProjectsList(data);
+            globalProjectsCache = data;
+          }
+        })
+        .catch(err => {
+          console.warn('[ProjectsLibrary] Fallback to embedded PROJECTS due to fetch error:', err);
+          setProjectsList(PROJECTS);
+          globalProjectsCache = PROJECTS;
+        });
+    }
+  }, [projects]);
+
   const [activeProject, setActiveProject] = useState<Project | null>(null);
 
   const handleSetActiveProject = (proj: Project | null) => {
@@ -34,73 +182,52 @@ export default function ProjectsLibrary() {
     }
     window.dispatchEvent(new Event('silicon_copilot_sync'));
   };
+
   const [copiedFile, setCopiedFile] = useState<string | null>(null);
   const [activeCycle, setActiveCycle] = useState<number>(2); // Waveform selector
 
   // Advanced Filtering States
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTech, setSelectedTech] = useState('All');
-  const [selectedDifficulty, setSelectedDifficulty] = useState('All');
-  const [selectedTool, setSelectedTool] = useState('All');
-  const [sortBy, setSortBy] = useState('default');
-  const [showFilters, setShowFilters] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('All'); // All, RTL, ASIC, FPGA, Embedded, Research, Completed, In Progress
+  const [sortBy, setSortBy] = useState<'Newest' | 'Most Complex' | 'Featured'>('Featured');
 
-  const categories = ['All', 'ASIC', 'FPGA', 'Computer Arch', 'Verification'];
-
-  // Helper to resolve project physical parameters for filtering
-  const getProjectMeta = (id: string) => {
-    switch(id) {
-      case 'rv32im-core':
-        return { difficulty: 'Advanced', tools: ['Verilator', 'OpenSTA', 'FPGA'], tech: ['RTL', 'FPGA'], frequency: 180, luts: 4280 };
-      case 'helios-7-soc':
-        return { difficulty: 'Advanced', tools: ['Cadence', 'Synopsys'], tech: ['ASIC', 'RTL'], frequency: 1200, luts: 28000000 };
-      case 'axi4-interconnect':
-        return { difficulty: 'Advanced', tools: ['ModelSim', 'UVM', 'FPGA'], tech: ['RTL', 'FPGA'], frequency: 350, luts: 8450 };
-      case 'l2-cache-controller':
-        return { difficulty: 'Advanced', tools: ['ModelSim', 'SymbiYosys'], tech: ['RTL', 'Research'], frequency: 200, luts: 12240 };
-      case 'eight-bit-computer':
-        return { difficulty: 'Intermediate', tools: ['Vivado', 'XSim'], tech: ['RTL', 'FPGA'], frequency: 50, luts: 342 };
-      default:
-        return { difficulty: 'Intermediate', tools: [], tech: ['RTL'], frequency: 0, luts: 0 };
-    }
-  };
-
-  // Filter & Sort Logic
-  const filteredProjects = PROJECTS.filter(proj => {
-    const meta = getProjectMeta(proj.id);
-    
-    // Category pill check
-    if (selectedCategory !== 'All' && proj.category !== selectedCategory) return false;
-    
-    // Tech check
-    if (selectedTech !== 'All' && !meta.tech.includes(selectedTech)) return false;
-    
-    // Difficulty check
-    if (selectedDifficulty !== 'All' && meta.difficulty !== selectedDifficulty) return false;
-    
-    // Tool check
-    if (selectedTool !== 'All' && !meta.tools.some(t => t.toLowerCase() === selectedTool.toLowerCase())) return false;
-    
-    // Search query check
-    if (searchQuery.trim() !== '') {
-      const q = searchQuery.toLowerCase();
-      const matchName = proj.name.toLowerCase().includes(q);
-      const matchTagline = proj.tagline.toLowerCase().includes(q);
-      const matchTech = proj.techStack.some(t => t.toLowerCase().includes(q));
-      if (!matchName && !matchTagline && !matchTech) return false;
-    }
-    
-    return true;
+  // Collapsible state for domains
+  const [expandedDomains, setExpandedDomains] = useState<Record<string, boolean>>({
+    'Computer Architecture': true,
+    'RTL Design': true,
+    'ASIC Design': true,
+    'Physical Design': false,
+    'FPGA': false,
+    'Embedded Systems': false,
+    'Research': false,
+    'Verification': false,
   });
 
-  // Sort Logic
-  if (sortBy === 'name') {
-    filteredProjects.sort((a, b) => a.name.localeCompare(b.name));
-  } else if (sortBy === 'frequency') {
-    filteredProjects.sort((a, b) => getProjectMeta(b.id).frequency - getProjectMeta(a.id).frequency);
-  } else if (sortBy === 'luts') {
-    filteredProjects.sort((a, b) => getProjectMeta(b.id).luts - getProjectMeta(a.id).luts);
-  }
+  const toggleDomain = (domain: string) => {
+    setExpandedDomains(prev => ({
+      ...prev,
+      [domain]: !prev[domain]
+    }));
+  };
+
+  const toggleAllDomains = (expand: boolean) => {
+    const next: Record<string, boolean> = {};
+    DOMAINS.forEach(d => {
+      next[d] = expand;
+    });
+    setExpandedDomains(next);
+  };
+
+  const filters = [
+    'All',
+    'RTL',
+    'ASIC',
+    'FPGA',
+    'Embedded',
+    'Research',
+    'Completed',
+    'In Progress'
+  ];
 
   const handleCopyCode = (filename: string, code: string) => {
     navigator.clipboard.writeText(code);
@@ -121,272 +248,414 @@ export default function ProjectsLibrary() {
     { clk: [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1], pc: '0x0020', instr: 'XOR R9, R3, R4',  forwardA: '00', aluOut: '0x0004', status: 'Nominal arithmetic pipeline state.' }
   ];
 
+  // Helper to filter and sort
+  const sortProjects = (projectsList: Project[]) => {
+    const list = [...projectsList];
+    if (sortBy === 'Newest') {
+      return list.sort((a, b) => {
+        const metaA = getProjectMetadata(a.id);
+        const metaB = getProjectMetadata(b.id);
+        return metaB.completionDate.localeCompare(metaA.completionDate);
+      });
+    } else if (sortBy === 'Most Complex') {
+      return list.sort((a, b) => {
+        const metaA = getProjectMetadata(a.id);
+        const metaB = getProjectMetadata(b.id);
+        return metaB.complexityScore - metaA.complexityScore;
+      });
+    } else {
+      // Featured
+      const featuredOrder = ['helios-7-soc', 'rv32im-core', 'axi4-interconnect', 'l2-cache-controller', 'eight-bit-computer'];
+      return list.sort((a, b) => {
+        const idxA = featuredOrder.indexOf(a.id);
+        const idxB = featuredOrder.indexOf(b.id);
+        return (idxA !== -1 ? idxA : 99) - (idxB !== -1 ? idxB : 99);
+      });
+    }
+  };
+
+  const filteredAndSortedProjects = sortProjects(
+    projectsList.filter((proj) => {
+      const meta = getProjectMetadata(proj.id);
+
+      // Apply Filter Pill
+      if (activeFilter === 'RTL') {
+        if (!meta.domains.includes('RTL Design')) return false;
+      } else if (activeFilter === 'ASIC') {
+        if (!meta.domains.includes('ASIC Design')) return false;
+      } else if (activeFilter === 'FPGA') {
+        if (!meta.domains.includes('FPGA')) return false;
+      } else if (activeFilter === 'Embedded') {
+        if (!meta.domains.includes('Embedded Systems')) return false;
+      } else if (activeFilter === 'Research') {
+        if (!meta.domains.includes('Research')) return false;
+      } else if (activeFilter === 'Completed') {
+        if (meta.status !== 'Completed') return false;
+      } else if (activeFilter === 'In Progress') {
+        if (meta.status !== 'In Progress') return false;
+      }
+
+      // Apply Search Query
+      if (searchQuery.trim() !== '') {
+        const query = searchQuery.toLowerCase();
+        const matchName = proj.name.toLowerCase().includes(query);
+        const matchTagline = proj.tagline.toLowerCase().includes(query);
+        const matchTech = proj.techStack.some((t) => t.toLowerCase().includes(query));
+        const matchLang = meta.primaryLanguage.toLowerCase().includes(query);
+        const matchDomains = meta.domains.some((d) => d.toLowerCase().includes(query));
+
+        if (!matchName && !matchTagline && !matchTech && !matchLang && !matchDomains) {
+          return false;
+        }
+      }
+
+      return true;
+    })
+  );
+
+  const projectsInDomain = (domain: string) => {
+    return filteredAndSortedProjects.filter((proj) => {
+      const meta = getProjectMetadata(proj.id);
+      return meta.domains.includes(domain);
+    });
+  };
+
+  // Count active domains
+  const activeDomainsCount = DOMAINS.filter(d => projectsInDomain(d).length > 0).length;
+
   return (
     <section className="py-12 animate-in fade-in slide-in-from-bottom-6 duration-500">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         
         {/* If no detailed project is open, show the list */}
-        {!activeProject ? (
-          <div>
-            {/* Header */}
+        <AnimatePresence mode="wait">
+          {!activeProject ? (
+            <motion.div
+              key="archive-list"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.25, ease: 'easeInOut' }}
+            >
+              {/* Header */}
             <div className="mb-10 text-center md:text-left">
-              <span className="font-mono text-xs font-semibold uppercase tracking-widest text-[#a78bfa]">
-                Engineering Archive
+              <span className="font-mono text-xs font-semibold uppercase tracking-widest text-[#a78bfa] border-b border-[#a78bfa]/20 pb-1">
+                SYSTEMS ARCHIVE // INTERNAL REPOSITORIES
               </span>
-              <h1 className="mt-2 font-sans text-4xl font-extrabold tracking-tight text-white md:text-5xl">
-                SILICON DESIGN LIBRARY
+              <h1 className="mt-3 font-mono text-3xl font-extrabold tracking-tight text-white md:text-4xl">
+                SILICON DESIGN DATABASE
               </h1>
-              <p className="mt-4 max-w-2xl font-sans text-base text-[#94a3b8]">
-                Explore high-performance synthesizable digital structures, parameterized interconnect buses, RISC-V compute cores, and advanced layout metrics.
+              <p className="mt-3 max-w-2xl font-sans text-sm text-[#94a3b8] leading-relaxed">
+                Authorized hardware codebase directory containing synthesizable RTL cores, memory subsystems, physical backend layout signoffs, and functional verification fixtures.
               </p>
             </div>
 
-            {/* Navigation and Advanced Filters Bar */}
-            <div className="mb-8 flex flex-col gap-5 border-b border-[rgba(255,255,255,0.06)] pb-6">
+            {/* Filter and Search controls */}
+            <div className="mb-8 flex flex-col gap-4 bg-[#0a0a0c]/80 border border-[rgba(255,255,255,0.06)] rounded-xl p-5 shadow-xl backdrop-blur-md">
               
-              {/* Category Pills & Search Row */}
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
-                  {categories.map((cat) => {
-                    const isActive = selectedCategory === cat;
-                    return (
-                      <button
-                        key={cat}
-                        onClick={() => setSelectedCategory(cat)}
-                        className="relative px-5 py-2 font-sans text-xs font-bold tracking-wide uppercase transition-colors duration-300 rounded-full overflow-hidden"
-                      >
-                        <span className={`relative z-10 transition-colors duration-300 ${
-                          isActive ? 'text-[#0a0a0a]' : 'text-[#94a3b8] hover:text-white'
-                        }`}>
-                          {cat}
-                        </span>
-                        {isActive && (
-                          <motion.span
-                            layoutId="activeCategoryPill"
-                            className="absolute inset-0 bg-gradient-to-r from-[#a78bfa] to-[#c084fc] rounded-full shadow-lg shadow-[#a78bfa]/20 z-0"
-                            transition={{ type: 'spring', stiffness: 350, damping: 26 }}
-                          />
-                        )}
-                        {!isActive && (
-                          <span className="absolute inset-0 bg-[#121212] border border-[rgba(255,255,255,0.06)] rounded-full -z-10 hover:bg-[#1a1a1a] transition-colors" />
-                        )}
-                      </button>
-                    );
-                  })}
+              {/* Search Row & Sort Selector */}
+              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                
+                {/* Search Bar */}
+                <div className="relative flex-1">
+                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-500">
+                    <Search className="h-4 w-4 text-[#a78bfa]/60" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Filter by register name, language, technology stack..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-[#111114] border border-[rgba(255,255,255,0.08)] rounded-lg pl-10 pr-4 py-2.5 font-mono text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#a78bfa]/50 focus:ring-1 focus:ring-[#a78bfa]/20 transition-all"
+                  />
+                  {searchQuery && (
+                    <button 
+                      onClick={() => setSearchQuery('')}
+                      className="absolute inset-y-0 right-3 flex items-center text-xs text-slate-500 hover:text-white font-mono"
+                    >
+                      CLEAR
+                    </button>
+                  )}
                 </div>
 
-                {/* Filter and Search controls */}
-                <div className="flex items-center gap-3 w-full md:w-auto">
-                  <div className="relative flex-1 md:w-64">
-                    <input
-                      type="text"
-                      placeholder="Search architecture database..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full bg-[#121212] border border-[rgba(255,255,255,0.08)] rounded-lg px-4 py-2 font-mono text-xs text-white focus:outline-none focus:border-[#a78bfa]/50"
-                    />
+                {/* Sorting and Action Buttons */}
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 bg-[#111114] border border-[rgba(255,255,255,0.08)] rounded-lg p-1">
+                    <span className="font-mono text-[10px] text-slate-500 uppercase px-2">// SORT:</span>
+                    {(['Featured', 'Newest', 'Most Complex'] as const).map((mode) => {
+                      const active = sortBy === mode;
+                      return (
+                        <button
+                          key={mode}
+                          onClick={() => setSortBy(mode)}
+                          className={`px-3 py-1.5 rounded font-mono text-[10px] font-bold uppercase transition-all ${
+                            active 
+                              ? 'bg-[#a78bfa]/10 text-[#a78bfa] border border-[#a78bfa]/30' 
+                              : 'text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          {mode}
+                        </button>
+                      );
+                    })}
                   </div>
 
-                  <button
-                    onClick={() => setShowFilters(!showFilters)}
-                    className={`px-4 py-2 rounded-lg border font-mono text-xs uppercase font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                      showFilters || selectedTech !== 'All' || selectedDifficulty !== 'All' || selectedTool !== 'All' || sortBy !== 'default'
-                        ? 'bg-purple-900/20 border-[#a78bfa] text-[#a78bfa]'
-                        : 'bg-[#121212] border-[rgba(255,255,255,0.06)] text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    ⚙️ Parameters
-                  </button>
+                  <div className="flex gap-1 bg-[#111114] border border-[rgba(255,255,255,0.08)] rounded-lg p-1">
+                    <button
+                      onClick={() => toggleAllDomains(true)}
+                      className="px-2.5 py-1.5 rounded font-mono text-[9px] font-bold uppercase text-slate-400 hover:text-white transition-all"
+                      title="Expand All Domains"
+                    >
+                      Expand All
+                    </button>
+                    <span className="text-slate-700 self-center">|</span>
+                    <button
+                      onClick={() => toggleAllDomains(false)}
+                      className="px-2.5 py-1.5 rounded font-mono text-[9px] font-bold uppercase text-slate-400 hover:text-white transition-all"
+                      title="Collapse All Domains"
+                    >
+                      Collapse All
+                    </button>
+                  </div>
                 </div>
+
               </div>
 
-              {/* Collapsible Parameters Filters Panel */}
-              <AnimatePresence>
-                {showFilters && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden bg-[#0a0a0a] border border-[rgba(255,255,255,0.05)] rounded-xl p-5"
+              {/* Professional Filters Bar */}
+              <div className="flex items-center gap-2 flex-wrap border-t border-[rgba(255,255,255,0.04)] pt-4">
+                <span className="font-mono text-[10px] text-slate-500 uppercase mr-1 flex items-center gap-1">
+                  <Filter className="h-3 w-3 text-[#a78bfa]/70" /> REG_FILTER:
+                </span>
+                {filters.map((flt) => {
+                  const isActive = activeFilter === flt;
+                  return (
+                    <button
+                      key={flt}
+                      onClick={() => setActiveFilter(flt)}
+                      className={`px-3.5 py-1.5 font-mono text-[10px] font-bold tracking-wide uppercase transition-all rounded-md ${
+                        isActive 
+                          ? 'bg-gradient-to-r from-[#a78bfa]/20 to-[#c084fc]/20 border border-[#a78bfa]/50 text-white shadow-md'
+                          : 'bg-[#111114]/60 border border-[rgba(255,255,255,0.06)] text-slate-400 hover:text-white hover:bg-[#18181c]'
+                      }`}
+                    >
+                      {flt}
+                    </button>
+                  );
+                })}
+              </div>
+
+            </div>
+
+            {/* Engineering Archive Folders */}
+            <div className="space-y-4">
+              {DOMAINS.map((domain) => {
+                const projects = projectsInDomain(domain);
+                const isExpanded = !!expandedDomains[domain];
+                
+                // If filters or search is active and this domain has no matching projects, hide it
+                if (projects.length === 0) return null;
+
+                return (
+                  <div 
+                    key={domain} 
+                    className="border border-[rgba(255,255,255,0.06)] bg-[#0d0d10] rounded-xl overflow-hidden shadow-lg transition-all"
                   >
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-5 font-mono text-[11px] uppercase">
-                      
-                      {/* Tech Filter */}
-                      <div>
-                        <span className="text-[#a78bfa] font-bold block mb-2">// Tech Core Target:</span>
-                        <select
-                          value={selectedTech}
-                          onChange={(e) => setSelectedTech(e.target.value)}
-                          className="w-full bg-[#121212] border border-[rgba(255,255,255,0.06)] rounded px-3 py-2 text-white focus:outline-none"
-                        >
-                          <option value="All">All Technologies</option>
-                          <option value="RTL">RTL HDL Designs</option>
-                          <option value="ASIC">ASIC Signoff</option>
-                          <option value="FPGA">FPGA Target Maps</option>
-                          <option value="Research">Coherence Research</option>
-                        </select>
-                      </div>
-
-                      {/* Difficulty */}
-                      <div>
-                        <span className="text-[#a78bfa] font-bold block mb-2">// Block Complexity:</span>
-                        <select
-                          value={selectedDifficulty}
-                          onChange={(e) => setSelectedDifficulty(e.target.value)}
-                          className="w-full bg-[#121212] border border-[rgba(255,255,255,0.06)] rounded px-3 py-2 text-white focus:outline-none"
-                        >
-                          <option value="All">All Difficulties</option>
-                          <option value="Intermediate">Intermediate Blocks</option>
-                          <option value="Advanced">Advanced Architectures</option>
-                        </select>
-                      </div>
-
-                      {/* Tools Used */}
-                      <div>
-                        <span className="text-[#a78bfa] font-bold block mb-2">// EDA Compiler Tool:</span>
-                        <select
-                          value={selectedTool}
-                          onChange={(e) => setSelectedTool(e.target.value)}
-                          className="w-full bg-[#121212] border border-[rgba(255,255,255,0.06)] rounded px-3 py-2 text-white focus:outline-none"
-                        >
-                          <option value="All">All EDA Systems</option>
-                          <option value="Cadence">Cadence Virtuoso/Innovus</option>
-                          <option value="Synopsys">Synopsys Design Compiler</option>
-                          <option value="Verilator">Verilator C++ Models</option>
-                          <option value="ModelSim">ModelSim Wave Simulator</option>
-                          <option value="SymbiYosys">SymbiYosys Formal Checker</option>
-                          <option value="Vivado">Xilinx Vivado</option>
-                        </select>
-                      </div>
-
-                      {/* Sorting */}
-                      <div>
-                        <span className="text-[#a78bfa] font-bold block mb-2">// Order Registers By:</span>
-                        <select
-                          value={sortBy}
-                          onChange={(e) => setSortBy(e.target.value)}
-                          className="w-full bg-[#121212] border border-[rgba(255,255,255,0.06)] rounded px-3 py-2 text-white focus:outline-none"
-                        >
-                          <option value="default">Default Address</option>
-                          <option value="name">Alphabetical (A-Z)</option>
-                          <option value="frequency">Signoff Frequency (Hz)</option>
-                          <option value="luts">Logic Density (LUTs / Transistors)</option>
-                        </select>
-                      </div>
-
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-            </div>
-
-            {/* Grid of Projects with Layout Animations */}
-            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
-              {filteredProjects.map((proj) => (
-                <motion.div
-                  layout
-                  key={proj.id}
-                  onClick={() => handleSetActiveProject(proj)}
-                  className="group relative flex flex-col overflow-hidden rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#121212] cursor-pointer transition-all duration-500 hover:border-[#a78bfa]/50 hover:shadow-2xl hover:shadow-[#a78bfa]/10 hover:-translate-y-1.5"
-                  id={`project-card-${proj.id}`}
-                >
-                  {/* Image Aspect ratio container */}
-                  <div className="relative h-52 w-full overflow-hidden bg-[#181818]">
-                    <img
-                      src={proj.image}
-                      alt={proj.name}
-                      referrerPolicy="no-referrer"
-                      className="h-full w-full object-cover opacity-60 grayscale transition-all duration-500 group-hover:scale-105 group-hover:opacity-80 group-hover:grayscale-0"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-transparent to-transparent" />
-                    
-                    {/* Top Right Badges */}
-                    <div className="absolute top-4 left-4 flex gap-1.5">
-                      <span className="rounded bg-[#a78bfa]/10 border border-[#a78bfa]/20 px-2.5 py-1 font-mono text-[10px] uppercase font-bold tracking-wider text-[#a78bfa]">
-                        {proj.category}
-                      </span>
-                    </div>
-
-                    {/* METRICS OVERLAY ON HOVER */}
-                    <div className="absolute inset-0 flex flex-col justify-end bg-black/90 p-5 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                      <span className="font-mono text-[10px] uppercase font-bold tracking-widest text-[#a78bfa] mb-3">
-                        ⚡ TIMING & PHYSICAL SIGN-OFF
-                      </span>
-                      <div className="grid grid-cols-2 gap-3 text-left">
-                        {proj.metrics.lutCount && (
-                          <div>
-                            <span className="block text-[10px] font-mono text-[#94a3b8] uppercase">Logic Size</span>
-                            <span className="font-mono text-sm text-white font-bold">{proj.metrics.lutCount}</span>
-                          </div>
-                        )}
-                        {proj.metrics.timingSlack && (
-                          <div>
-                            <span className="block text-[10px] font-mono text-[#94a3b8] uppercase">Timing Slack</span>
-                            <span className="font-mono text-sm text-[#10b981] font-bold">{proj.metrics.timingSlack}</span>
-                          </div>
-                        )}
-                        {proj.metrics.area && (
-                          <div>
-                            <span className="block text-[10px] font-mono text-[#94a3b8] uppercase">Silicon Area</span>
-                            <span className="font-mono text-sm text-white font-bold">{proj.metrics.area}</span>
-                          </div>
-                        )}
-                        {proj.metrics.frequency && (
-                          <div>
-                            <span className="block text-[10px] font-mono text-[#94a3b8] uppercase">Signoff Freq</span>
-                            <span className="font-mono text-sm text-[#a78bfa] font-bold">{proj.metrics.frequency}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                  </div>
-
-                  {/* Body Content */}
-                  <div className="flex flex-1 flex-col p-6">
-                    <span className="font-mono text-xs font-bold text-[#a78bfa]">
-                      {proj.name}
-                    </span>
-                    <h3 className="mt-1 font-sans text-xl font-bold text-white tracking-tight group-hover:text-[#a78bfa] transition-colors">
-                      {proj.tagline}
-                    </h3>
-                    <p className="mt-3 flex-1 font-sans text-sm text-[#94a3b8] line-clamp-3">
-                      {proj.description}
-                    </p>
-
-                    {/* Tech Badges */}
-                    <div className="mt-4 flex flex-wrap gap-1.5">
-                      {proj.techStack.map((tech) => (
-                        <span
-                          key={tech}
-                          className="rounded-md bg-[#1a1a1a] border border-[rgba(255,255,255,0.06)] px-2 py-0.5 font-mono text-[10px] text-[#94a3b8]"
-                        >
-                          {tech}
+                    {/* Collapsible Folder Header */}
+                    <button
+                      onClick={() => toggleDomain(domain)}
+                      className="w-full flex items-center justify-between px-5 py-4 bg-[#111115] hover:bg-[#15151c] transition-colors border-b border-[rgba(255,255,255,0.04)]"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="text-[#a78bfa]">
+                          {isExpanded ? (
+                            <FolderOpen className="h-5 w-5" />
+                          ) : (
+                            <Folder className="h-5 w-5" />
+                          )}
+                        </div>
+                        <span className="font-mono text-xs font-bold text-slate-100 uppercase tracking-wider">
+                          {domain}
                         </span>
-                      ))}
-                    </div>
+                        <span className="rounded-full bg-[#1e1b4b] border border-[#a78bfa]/30 px-2 py-0.5 font-mono text-[9px] font-bold text-[#a78bfa]">
+                          {projects.length}
+                        </span>
+                      </div>
 
-                    <div className="mt-5 flex items-center justify-between border-t border-[rgba(255,255,255,0.06)] pt-4">
-                      <span className="font-mono text-[10px] uppercase text-[#94a3b8] flex items-center gap-1">
-                        <ShieldCheck className="h-3.5 w-3.5 text-[#10b981]" /> PPA Mapped
-                      </span>
-                      <span className="font-sans text-xs font-bold text-[#a78bfa] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                        Detailed Specs <ArrowUpRight className="h-3.5 w-3.5" />
-                      </span>
-                    </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[9px] uppercase text-slate-500 tracking-wider hidden sm:inline">
+                          {isExpanded ? 'Collapse Folder' : 'Expand Folder'}
+                        </span>
+                        {isExpanded ? (
+                          <ChevronDown className="h-4 w-4 text-slate-400" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-slate-400" />
+                        )}
+                      </div>
+                    </button>
 
+                    {/* Folder Content: Projects List */}
+                    <AnimatePresence initial={false}>
+                      {isExpanded && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2, ease: 'easeInOut' }}
+                          className="overflow-hidden bg-[#070709]"
+                        >
+                          <div className="divide-y divide-[rgba(255,255,255,0.04)] p-1.5">
+                            {projects.map((proj) => {
+                              const meta = getProjectMetadata(proj.id);
+                              
+                              // Language Color Indicator Dot
+                              const langColor = 
+                                meta.primaryLanguage === 'SystemVerilog' ? 'bg-[#a78bfa]' :
+                                meta.primaryLanguage === 'Chisel' ? 'bg-[#10b981]' :
+                                'bg-[#eab308]'; // Verilog
+
+                              return (
+                                <motion.div
+                                  initial={{ opacity: 0, y: 5 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  key={`${domain}-${proj.id}`}
+                                  className="group flex flex-col md:flex-row md:items-center justify-between p-4 bg-[#0a0a0d]/40 hover:bg-[#121217]/80 rounded-lg border border-transparent hover:border-[#a78bfa]/20 transition-all duration-300"
+                                >
+                                  {/* Left: Project Identity */}
+                                  <div className="flex-1 min-w-0 pr-4">
+                                    <div className="flex items-center gap-2.5 flex-wrap">
+                                      <Terminal className="h-3.5 w-3.5 text-[#a78bfa]/70 shrink-0" />
+                                      <h3 className="font-mono text-sm font-bold text-slate-100 group-hover:text-[#a78bfa] transition-colors tracking-tight">
+                                        google-deepmind / {proj.name}
+                                      </h3>
+                                      
+                                      {/* Status Badge */}
+                                      <span className={`rounded-full px-2.5 py-0.5 font-mono text-[9px] uppercase font-bold border ${
+                                        meta.status === 'Completed' 
+                                          ? 'bg-[#10b981]/10 border-[#10b981]/30 text-[#10b981]' 
+                                          : 'bg-[#f59e0b]/10 border-[#f59e0b]/30 text-[#f59e0b]'
+                                      }`}>
+                                        ● {meta.status === 'Completed' ? 'TAPEOUT_READY' : 'IN_PROGRESS'}
+                                      </span>
+
+                                      {/* Difficulty Badge */}
+                                      <span className="rounded bg-[#1e1b4b]/50 border border-[rgba(255,255,255,0.08)] px-2.5 py-0.5 font-mono text-[9px] text-[#94a3b8]">
+                                        {meta.difficulty}
+                                      </span>
+                                    </div>
+
+                                    {/* Tech Tag Stack */}
+                                    <div className="mt-2.5 flex flex-wrap gap-1.5 items-center">
+                                      {/* Language Dot */}
+                                      <div className="flex items-center gap-1.5 mr-2 font-mono text-[10px] text-slate-400">
+                                        <span className={`h-2 w-2 rounded-full ${langColor}`} />
+                                        {meta.primaryLanguage}
+                                      </div>
+
+                                      <span className="text-slate-600 text-[10px] font-mono select-none">|</span>
+
+                                      {proj.techStack.map((tech) => (
+                                        <span
+                                          key={tech}
+                                          className="rounded bg-[#141419] border border-[rgba(255,255,255,0.04)] px-1.5 py-0.5 font-mono text-[9px] text-slate-400 group-hover:border-[#a78bfa]/10 transition-colors"
+                                        >
+                                          {tech}
+                                        </span>
+                                      ))}
+                                    </div>
+
+                                    {/* Quick Tags / Subtitle */}
+                                    <div className="mt-2 flex flex-wrap gap-2 items-center text-[10px] text-slate-500 font-mono">
+                                      <span className="flex items-center gap-1">
+                                        <Calendar className="h-3 w-3 text-slate-600" /> Compl: {meta.completionDisplay}
+                                      </span>
+                                      <span>•</span>
+                                      <span className="flex items-center gap-1 text-slate-400">
+                                        <GitBranch className="h-3 w-3 text-slate-600" /> branch: <span className="text-[#a78bfa]/80">main</span>
+                                      </span>
+                                      <span>•</span>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-slate-600">Tags:</span>
+                                        {meta.quickTags.map((qt) => (
+                                          <span key={qt} className="text-slate-400 bg-slate-900/40 px-1 py-0.2 rounded font-mono text-[9px]">
+                                            #{qt.toLowerCase().replace(/\s+/g, '')}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Right: Actions Buttons */}
+                                  <div className="mt-4 md:mt-0 flex items-center gap-2 shrink-0">
+                                    {/* GitHub Repo Button */}
+                                    <a
+                                      href={meta.githubUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center justify-center p-2 rounded-lg bg-[#111115] border border-[rgba(255,255,255,0.08)] text-slate-400 hover:text-white hover:border-[#a78bfa]/40 transition-all cursor-pointer"
+                                      title="Open Source Repository"
+                                    >
+                                      <Github className="h-4 w-4" />
+                                    </a>
+
+                                    {/* Open Workspace Button */}
+                                    <button
+                                      onClick={() => handleSetActiveProject(proj)}
+                                      className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#5b21b6] to-[#7c3aed] border border-[#a78bfa]/40 px-3.5 py-2 font-mono text-[10px] font-bold uppercase text-white hover:brightness-110 active:scale-95 transition-all shadow-md shadow-[#5b21b6]/20 cursor-pointer"
+                                    >
+                                      Open Workspace <ArrowUpRight className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
+                                </motion.div>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
-                </motion.div>
-              ))}
+                );
+              })}
+
+              {/* Centralized Empty State when no domains matched */}
+              {activeDomainsCount === 0 && (
+                <div className="text-center py-16 border border-dashed border-[rgba(255,255,255,0.08)] rounded-xl bg-[#0a0a0c]/40">
+                  <div className="mx-auto h-12 w-12 text-slate-600 mb-3 flex items-center justify-center">
+                    <Activity className="h-8 w-8 text-[#a78bfa]/40 animate-pulse" />
+                  </div>
+                  <h3 className="font-mono text-sm font-bold text-white uppercase tracking-wider">
+                    NO REG_RECORDS MATCHED
+                  </h3>
+                  <p className="mt-1 font-sans text-xs text-[#94a3b8] max-w-md mx-auto">
+                    The active query or parameter combination did not retrieve any registered cores. Adjust filters or search parameters.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setActiveFilter('All');
+                      setSearchQuery('');
+                    }}
+                    className="mt-4 px-4 py-2 rounded-lg border border-[#a78bfa]/30 bg-[#a78bfa]/10 font-mono text-xs uppercase font-bold text-[#a78bfa] hover:bg-[#a78bfa]/20 transition-all"
+                  >
+                    Reset Archive Registers
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
-        ) : activeProject.id === 'rv32im-core' ? (
-          <RV32IMSoCDetail onClose={() => handleSetActiveProject(null)} />
-        ) : activeProject.id === 'eight-bit-computer' ? (
-          <EightBitComputerDetail onClose={() => handleSetActiveProject(null)} />
-        ) : (
-          // Detailed Project View
+          </motion.div>
+          ) : (
+            <motion.div
+              key="project-workspace"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.25, ease: 'easeInOut' }}
+            >
+              <ProjectWorkspace project={activeProject} onClose={() => handleSetActiveProject(null)} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Legacy views disabled to respect single unified workspace architecture */}
+        {false && (
           <div className="animate-in fade-in duration-300">
             {/* Back Button */}
             <button
