@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { CopilotMessage, CopilotAnalytics } from "../types/copilot";
 import { sanitizeStreamingMarkdown } from "../services/responseFormatter";
+import { generateLocalResponse } from "../services/localCopilotEngine";
 
 const STORAGE_KEY = "silicon_copilot_messages";
 const ANALYTICS_KEY = "silicon_copilot_local_analytics";
@@ -27,6 +28,7 @@ export function useCopilot() {
   });
 
   const abortControllerRef = useRef<AbortController | null>(null);
+  const streamIntervalRef = useRef<any>(null);
 
   // Load chat history and analytics from localStorage on mount
   useEffect(() => {
@@ -58,8 +60,8 @@ export function useCopilot() {
     }
   }, [messages]);
 
-  // Track analytics locally and sync to server
-  const trackInteraction = async (userQuestion: string, detectedProjectName?: string) => {
+  // Track analytics locally
+  const trackInteraction = useCallback((userQuestion: string, detectedProjectName?: string) => {
     // 1. Update local analytics in state & local storage
     const updatedAnalytics = { ...analytics };
     updatedAnalytics.interactionsCount += 1;
@@ -97,22 +99,7 @@ export function useCopilot() {
 
     setAnalytics(updatedAnalytics);
     localStorage.setItem(ANALYTICS_KEY, JSON.stringify(updatedAnalytics));
-
-    // 2. Fire-and-forget server sync
-    try {
-      await fetch("/api/copilot/track", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question: userQuestion,
-          projectName: detectedProjectName,
-          sessionLength: userMsgCount
-        })
-      });
-    } catch (e) {
-      // Ignore background track failures in client
-    }
-  };
+  }, [analytics, messages]);
 
   // Auto detect which parts of the portfolio are cited in the response text
   const attributeSources = (text: string): string[] => {
@@ -145,7 +132,7 @@ export function useCopilot() {
     return Array.from(new Set(sources));
   };
 
-  // Send message implementation with full streaming compatibility
+  // Send message implementation with simulated high-fidelity streaming
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || isLoading) return;
 
@@ -176,7 +163,7 @@ export function useCopilot() {
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     };
 
-    // Prepare message history for Gemini API
+    // Prepare message history
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
 
@@ -196,64 +183,68 @@ export function useCopilot() {
     abortControllerRef.current = abortController;
 
     try {
-      const response = await fetch("/api/copilot/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: updatedMessages }),
-        signal: abortController.signal
-      });
+      // Generate highly detailed technical local response
+      const localResult = generateLocalResponse(content);
+      const fullText = localResult.response;
+      const sources = localResult.sources;
+      const followUps = localResult.followUps;
 
-      if (!response.ok) {
-        throw new Error(`Server returned status code ${response.status}`);
+      // Simulate streaming chunks
+      let currentIndex = 0;
+      const stepIncrement = 35; // Characters per step
+      const stepInterval = 15; // Speed of step
+
+      if (streamIntervalRef.current) {
+        clearInterval(streamIntervalRef.current);
       }
 
-      if (!response.body) {
-        throw new Error("ReadableStream is not supported by this server response.");
-      }
+      streamIntervalRef.current = setInterval(() => {
+        if (abortController.signal.aborted) {
+          if (streamIntervalRef.current) {
+            clearInterval(streamIntervalRef.current);
+            streamIntervalRef.current = null;
+          }
+          return;
+        }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder("utf-8");
-      let partialContent = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        partialContent += chunk;
-
-        // Perform real-time sanitization of inline block formatting
-        const sanitizedContent = sanitizeStreamingMarkdown(partialContent);
+        currentIndex += stepIncrement;
+        const currentSlice = fullText.slice(0, currentIndex);
+        const sanitizedSlice = sanitizeStreamingMarkdown(currentSlice);
 
         setMessages(prev =>
           prev.map(msg =>
             msg.id === assistantMessageId
-              ? { ...msg, content: sanitizedContent }
+              ? { ...msg, content: sanitizedSlice }
               : msg
           )
         );
-      }
 
-      // Final complete pass including full source attribution
-      setMessages(prev =>
-        prev.map(msg => {
-          if (msg.id === assistantMessageId) {
-            const finalContent = partialContent.trim();
-            const sources = attributeSources(finalContent);
-            return {
-              ...msg,
-              content: finalContent,
-              sources,
-              suggestedFollowUps: generateFollowUps(finalContent)
-            };
+        if (currentIndex >= fullText.length) {
+          if (streamIntervalRef.current) {
+            clearInterval(streamIntervalRef.current);
+            streamIntervalRef.current = null;
           }
-          return msg;
-        })
-      );
+
+          // Complete message with attributes
+          setMessages(prev =>
+            prev.map(msg =>
+              msg.id === assistantMessageId
+                ? {
+                    ...msg,
+                    content: fullText,
+                    sources,
+                    suggestedFollowUps: followUps
+                  }
+                : msg
+            )
+          );
+          setIsLoading(false);
+          abortControllerRef.current = null;
+        }
+      }, stepInterval);
 
     } catch (err: any) {
       if (err.name === "AbortError") {
-        // Safe stream cancellation, clean up
         console.log("Copilot streaming generation aborted.");
       } else {
         console.error("Copilot stream fetch failure", err);
@@ -261,18 +252,22 @@ export function useCopilot() {
         // Clean up the incomplete assistant message if empty
         setMessages(prev => prev.filter(m => m.id !== assistantMessageId || m.content.length > 0));
       }
-    } finally {
       setIsLoading(false);
       abortControllerRef.current = null;
     }
-  }, [messages, isLoading, analytics]);
+  }, [messages, isLoading, trackInteraction]);
 
   // Cancel any active streaming request
   const stopGeneration = useCallback(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
-      setIsLoading(false);
+      abortControllerRef.current = null;
     }
+    if (streamIntervalRef.current) {
+      clearInterval(streamIntervalRef.current);
+      streamIntervalRef.current = null;
+    }
+    setIsLoading(false);
   }, []);
 
   // Regenerate last response
