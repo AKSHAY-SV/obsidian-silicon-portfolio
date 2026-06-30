@@ -545,7 +545,7 @@ endmodule`
           {/* Hero CTAs */}
           <div className="mt-8 flex flex-wrap gap-4">
             <a
-              href="https://github.com"
+              href="https://github.com/AKSHAY-SV"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 rounded-lg bg-[#a78bfa] px-5 py-3 font-sans text-xs font-bold uppercase tracking-wider text-[#0a0a0a] hover:bg-[#b49dfb] transition-all"

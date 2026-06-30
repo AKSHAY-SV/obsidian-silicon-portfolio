@@ -76,17 +76,17 @@ export default function Contact() {
               {/* Channel 3: Social grids */}
               <div className="flex gap-3 pt-2">
                 <a
-                  href="https://github.com"
+                  href="https://github.com/AKSHAY-SV"
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-[rgba(255,255,255,0.08)] bg-[#0d0d0d] py-3 text-sm font-mono font-bold text-slate-400 hover:text-white hover:border-[#a78bfa]/50 transition-all"
                 >
                   <Github className="h-4 w-4 text-[#a78bfa]" /> GitHub
                 </a>
                 <a
-                  href="https://linkedin.com"
+                  href="https://www.linkedin.com/in/akshay-srikrishnan150411/"
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-[rgba(255,255,255,0.08)] bg-[#0d0d0d] py-3 text-sm font-mono font-bold text-slate-400 hover:text-white hover:border-[#a78bfa]/50 transition-all"
                 >
                   <Linkedin className="h-4 w-4 text-[#a78bfa]" /> LinkedIn

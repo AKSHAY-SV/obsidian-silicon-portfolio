@@ -102,35 +102,23 @@ export default function Footer({ setActiveTab, onSystemStatusOpen }: FooterProps
             </span>
             <div className="flex items-center gap-3">
               <a
-                href="https://github.com"
+                href="https://github.com/AKSHAY-SV"
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="flex h-9 w-9 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.08)] bg-[#121212] text-[#94a3b8] hover:bg-[#1a1a1a] hover:text-white transition-all"
-                title="GitHub Repository"
+                title="GitHub Profile"
               >
                 <Github className="h-4.5 w-4.5" />
               </a>
               <a
-                href="https://linkedin.com"
+                href="https://www.linkedin.com/in/akshay-srikrishnan150411/"
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="flex h-9 w-9 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.08)] bg-[#121212] text-[#94a3b8] hover:bg-[#1a1a1a] hover:text-white transition-all"
                 title="LinkedIn Profile"
               >
                 <Linkedin className="h-4.5 w-4.5" />
               </a>
-              <button
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.08)] bg-[#121212] text-[#94a3b8] hover:bg-[#1a1a1a] hover:text-white transition-all"
-                title="System Logs RSS"
-              >
-                <Rss className="h-4.5 w-4.5" />
-              </button>
-              <button
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.08)] bg-[#121212] text-[#94a3b8] hover:bg-[#1a1a1a] hover:text-white transition-all"
-                title="Share Portfolio"
-              >
-                <Share2 className="h-4.5 w-4.5" />
-              </button>
             </div>
             <div className="flex items-center gap-1.5 text-[#94a3b8] text-xs font-mono">
               <Shield className="h-3.5 w-3.5 text-[#a78bfa]" />

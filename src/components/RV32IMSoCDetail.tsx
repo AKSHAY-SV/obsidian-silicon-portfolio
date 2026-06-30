@@ -548,15 +548,15 @@ endmodule`
 
             <div className="flex flex-wrap gap-4">
               <a 
-                href="https://github.com/aksh-ai" 
+                href="https://github.com/AKSHAY-SV" 
                 target="_blank" 
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-[#1c1c22] hover:bg-slate-800 border border-slate-700/60 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all text-white font-mono"
               >
                 <Github className="h-4 w-4" /> View GitHub Repository
               </a>
               <button 
-                onClick={() => handleCopy('https://github.com/aksh-ai/RV32IM-SoC-Report.pdf')}
+                onClick={() => handleCopy('https://github.com/AKSHAY-SV/RV32IM-SoC-Report.pdf')}
                 className="inline-flex items-center gap-2 bg-[#a78bfa] hover:bg-[#b79cfb] text-[#0a0a0c] px-5 py-2.5 rounded-lg text-sm font-bold transition-all"
               >
                 <Download className="h-4 w-4" /> Download Engineering Report

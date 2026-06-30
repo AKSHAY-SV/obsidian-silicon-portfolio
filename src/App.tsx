@@ -656,42 +656,53 @@ Tapeouts: Helios-7 Edge AI SoC (TSMC 7nm), RV32IM Processor (Artix-7), L2 MESI C
             </div>
 
             {/* Immersive Terminal UI with Resume content */}
-            <div className="rounded border border-[rgba(255,255,255,0.05)] bg-[#0a0a0a] p-5 font-mono text-xs text-slate-300 leading-relaxed max-h-96 overflow-y-auto">
+            <div className="rounded-lg border border-[rgba(255,255,255,0.05)] bg-[#050505] p-6 font-mono text-xs text-slate-300 leading-relaxed max-h-[28rem] overflow-y-auto space-y-6">
               
-              <div className="text-[#a78bfa] font-bold text-sm mb-4">
+              <div className="text-[#a78bfa] font-bold text-sm tracking-tight border-b border-[rgba(167,139,250,0.15)] pb-3 mb-4">
                 &gt;&gt;&gt; AKSHAY SRIKRISHNAN - SILICON DESIGN ENGINEER &amp; ARCHITECT
               </div>
 
               {/* Education section */}
-              <div className="mb-4">
-                <span className="text-[#10b981] font-bold block flex items-center gap-1">
-                  <GraduationCap className="h-4 w-4" /> [01] ACADEMIC CREDENTIALS
+              <div className="space-y-1.5 pl-2 border-l-2 border-[#10b981]/30">
+                <span className="text-[#10b981] font-bold flex items-center gap-2 text-xs">
+                  <GraduationCap className="h-4 w-4 shrink-0" /> [01] ACADEMIC CREDENTIALS
                 </span>
-                <span className="block font-bold text-white mt-1">M.S. in Computer Engineering</span>
-                <span className="block text-slate-400">Specialization: VLSI Circuits &amp; Computer Architecture</span>
-                <span className="block text-slate-400">G.P.A: 3.92 / 4.0</span>
+                <div className="pl-6 space-y-1 text-slate-300">
+                  <span className="block font-bold text-white">M.S. in Computer Engineering</span>
+                  <span className="block text-slate-400">Specialization: VLSI Circuits &amp; Computer Architecture</span>
+                  <span className="block text-slate-400">G.P.A: 3.92 / 4.0</span>
+                </div>
               </div>
 
               {/* Past Projects Tapeouts */}
-              <div className="mb-4">
-                <span className="text-[#10b981] font-bold block flex items-center gap-1">
-                  <Briefcase className="h-4 w-4" /> [02] RECOGNIZED HARDWARE TAPEOUTS
+              <div className="space-y-1.5 pl-2 border-l-2 border-[#10b981]/30">
+                <span className="text-[#10b981] font-bold flex items-center gap-2 text-xs">
+                  <Briefcase className="h-4 w-4 shrink-0" /> [02] RECOGNIZED HARDWARE TAPEOUTS
                 </span>
-                <div className="mt-1 space-y-1 text-xs">
-                  <span className="block">• <strong className="text-white">Helios-7 Edge AI SoC:</strong> Lead Floorplanner and physical power network router. Mapped using TSMC 7nm technology PDK libraries.</span>
-                  <span className="block">• <strong className="text-white">RV32IM Core CPU:</strong> Synthesized, verified fully synthesizable Base Integer Integer multiplier core on FPGA targets.</span>
-                  <span className="block">• <strong className="text-white">Non-Blocking L2 Controller:</strong> Formal validation of MESI states and cachelines.</span>
+                <div className="pl-6 space-y-2 text-slate-300">
+                  <div className="flex items-start gap-1.5">
+                    <span className="text-[#10b981] select-none shrink-0">•</span>
+                    <span className="block break-words"><strong className="text-white font-semibold">Helios-7 Edge AI SoC:</strong> Lead Floorplanner and physical power network router. Mapped using TSMC 7nm technology PDK libraries.</span>
+                  </div>
+                  <div className="flex items-start gap-1.5">
+                    <span className="text-[#10b981] select-none shrink-0">•</span>
+                    <span className="block break-words"><strong className="text-white font-semibold">RV32IM Core CPU:</strong> Synthesized, verified fully synthesizable Base Integer Integer multiplier core on FPGA targets.</span>
+                  </div>
+                  <div className="flex items-start gap-1.5">
+                    <span className="text-[#10b981] select-none shrink-0">•</span>
+                    <span className="block break-words"><strong className="text-white font-semibold">Non-Blocking L2 Controller:</strong> Formal validation of MESI states and cachelines.</span>
+                  </div>
                 </div>
               </div>
 
               {/* Core Skill competency */}
-              <div>
-                <span className="text-[#10b981] font-bold block flex items-center gap-1">
-                  <Award className="h-4 w-4" /> [03] SYNTAX &amp; TOOLCHAIN COMPILING COMPETE
+              <div className="space-y-1.5 pl-2 border-l-2 border-[#10b981]/30">
+                <span className="text-[#10b981] font-bold flex items-center gap-2 text-xs">
+                  <Award className="h-4 w-4 shrink-0" /> [03] SYNTAX &amp; TOOLCHAIN COMPILING COMPETE
                 </span>
-                <span className="block text-slate-400 mt-1">
+                <div className="pl-6 text-slate-400 break-words leading-relaxed">
                   SystemVerilog, Verilog, Chisel, Python (Cocotb), C++ (Verilator compiler models), Cadence Innovus, OpenROAD, OpenSTA, GTKWave waveform tracking.
-                </span>
+                </div>
               </div>
 
             </div>

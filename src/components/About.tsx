@@ -98,11 +98,6 @@ export default function About() {
             <div className="absolute bottom-1 right-2 bg-[#0c0c0c] border-2 border-[#a78bfa]/50 rounded-full h-5.5 w-5.5 flex items-center justify-center shadow-lg shadow-black z-10">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
- 
-            {/* Elegant Tooltip Instruction */}
-            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-[#0d0d0d]/95 border border-[rgba(255,255,255,0.1)] px-3 py-1.5 rounded-md text-[9px] font-mono tracking-wider uppercase text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap shadow-xl z-20">
-              ⚡ Drop "profile.jpg" here to replace photo
-            </div>
           </motion.div>
         </div>
 
