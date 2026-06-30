@@ -4,14 +4,14 @@ import { Clock, ChevronDown, ChevronUp, Bookmark, Copy, Check } from 'lucide-rea
 import RippleButton from './RippleButton';
 import { usePrefersReducedMotion } from './hooks';
 
-export interface ResearchCard {
+export interface ResearchCardType {
   id: string;
   category: string;
   title: string;
   summary: string;
   whyItMatters: string;
   industryImpact: string;
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert' | string;
   readingTime: string;
   source: string;
   date?: string;
@@ -24,9 +24,9 @@ export interface ResearchCard {
   featured?: boolean;
 }
 
-interface ResearchCardItemProps {
+interface ResearchCardProps {
   key?: React.Key | string;
-  pub: ResearchCard;
+  pub: ResearchCardType;
   isExpanded: boolean;
   isBookmarked: boolean;
   onToggleExpand: () => void;
@@ -34,14 +34,14 @@ interface ResearchCardItemProps {
   onCopyCitation: (text: string) => void;
 }
 
-export default function ResearchCardItem({
+export default function ResearchCard({
   pub,
   isExpanded,
   isBookmarked,
   onToggleExpand,
   onToggleBookmark,
   onCopyCitation,
-}: ResearchCardItemProps) {
+}: ResearchCardProps) {
   const shouldReduceMotion = usePrefersReducedMotion();
   const [copied, setCopied] = useState(false);
 

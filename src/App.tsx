@@ -122,7 +122,7 @@ Tapeouts: Helios-7 Edge AI SoC (TSMC 7nm), RV32IM Processor (Artix-7), L2 MESI C
                 </motion.span>
                 <h1 className="font-sans text-5xl font-black tracking-tight leading-[0.95] text-white sm:text-7xl md:text-8xl uppercase">
                   Akshay Srikrishnan:<br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#a78bfa] via-[#c084fc] to-[#e879f9]">Architecting Silicon.</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#a78bfa] via-[#c084fc] to-[#e879f9]">Architecting Silicon</span>
                 </h1>
                 <p className="mx-auto mt-8 max-w-2xl font-sans text-base text-slate-300 leading-relaxed">
                   Designing synthesizable micro-architectures, low-latency coherent cache fabrics, high-speed interconnect switches, and automating silicon physical implementation GDS flows.

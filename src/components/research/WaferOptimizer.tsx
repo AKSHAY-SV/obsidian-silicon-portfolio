@@ -10,6 +10,7 @@ interface WaferOptimizerProps {
   waferVoltage: number;
   setWaferVoltage: (voltage: number) => void;
   mischiefOverclock: number;
+  disabled?: boolean;
 }
 
 export default function WaferOptimizer({
@@ -18,6 +19,7 @@ export default function WaferOptimizer({
   waferVoltage,
   setWaferVoltage,
   mischiefOverclock,
+  disabled = false,
 }: WaferOptimizerProps) {
   const shouldReduceMotion = usePrefersReducedMotion();
   const [isSimulating, setIsSimulating] = useState(false);
@@ -87,7 +89,8 @@ export default function WaferOptimizer({
               step={1}
               value={processNodeSize} 
               onChange={(e) => setProcessNodeSize(Number(e.target.value))}
-              className="w-full accent-[#a78bfa] h-1.5 bg-[#222] rounded-lg cursor-pointer"
+              disabled={disabled}
+              className={`w-full accent-[#a78bfa] h-1.5 bg-[#222] rounded-lg cursor-pointer transition-all ${disabled ? 'opacity-30 cursor-not-allowed' : ''}`}
             />
           </div>
 
@@ -104,7 +107,8 @@ export default function WaferOptimizer({
               step={0.05}
               value={waferVoltage} 
               onChange={(e) => setWaferVoltage(Number(e.target.value))}
-              className="w-full accent-[#a78bfa] h-1.5 bg-[#222] rounded-lg cursor-pointer"
+              disabled={disabled}
+              className={`w-full accent-[#a78bfa] h-1.5 bg-[#222] rounded-lg cursor-pointer transition-all ${disabled ? 'opacity-30 cursor-not-allowed' : ''}`}
             />
           </div>
 
@@ -134,8 +138,12 @@ export default function WaferOptimizer({
 
       <RippleButton
         onClick={handleSimulate}
-        disabled={isSimulating}
-        className="mt-5 w-full rounded-lg bg-[#a78bfa] hover:bg-[#b49dfb] text-black py-2.5 font-sans text-xs font-bold uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5"
+        disabled={isSimulating || disabled}
+        className={`mt-5 w-full rounded-lg py-2.5 font-sans text-xs font-bold uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 ${
+          disabled 
+            ? 'bg-slate-800 text-slate-500 border border-slate-700/50 cursor-not-allowed opacity-50' 
+            : 'bg-[#a78bfa] hover:bg-[#b49dfb] text-black'
+        }`}
         rippleColor="rgba(0, 0, 0, 0.15)"
       >
         {isSimulating ? (
