@@ -39,8 +39,9 @@ export default function TopNavBar({
         {/* Brand Logo Left */}
         <button
           onClick={() => setActiveTab('home')}
-          className="flex items-center gap-2.5 text-left group"
+          className="flex items-center gap-2.5 text-left group focus-visible:ring-2 focus-visible:ring-[#a78bfa] focus-visible:outline-none rounded-lg p-1"
           id="nav-brand-logo"
+          aria-label="Obsidian Architecture - Silicon Design Hub Home"
         >
           <div className="relative flex h-9.5 w-9.5 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.15)] bg-[#121212] transition-all group-hover:border-[#a78bfa]/50">
             <Cpu className="h-5 w-5 text-[#a78bfa] transition-transform duration-700 group-hover:rotate-180" />
@@ -57,7 +58,7 @@ export default function TopNavBar({
         </button>
 
         {/* Nav Links Center (Desktop) */}
-        <nav className="hidden lg:flex h-full items-center gap-1">
+        <nav className="hidden lg:flex h-full items-center gap-1" aria-label="Main Navigation">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
@@ -67,10 +68,11 @@ export default function TopNavBar({
                   setActiveTab(item.id);
                   setMobileMenuOpen(false);
                 }}
-                className={`relative flex h-full items-center px-3 font-sans text-[10px] font-bold uppercase tracking-[0.2em] transition-colors duration-300 ${
+                className={`relative flex h-full items-center px-3 font-sans text-[10px] font-bold uppercase tracking-[0.2em] transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-[#a78bfa]/70 focus-visible:outline-none ${
                   isActive ? 'text-white' : 'text-slate-400 hover:text-white'
                 }`}
                 id={`nav-link-${item.id}`}
+                aria-current={isActive ? 'page' : undefined}
               >
                 <span className="relative z-10">{item.label}</span>
                 {isActive && (
@@ -89,25 +91,27 @@ export default function TopNavBar({
         <div className="hidden md:flex items-center gap-3">
           <button
             onClick={onSearchOpen}
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-transparent text-[#94a3b8] hover:border-[rgba(255,255,255,0.08)] hover:bg-[#161616] hover:text-white transition-all duration-200"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-transparent text-[#94a3b8] hover:border-[rgba(255,255,255,0.08)] hover:bg-[#161616] hover:text-white transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#a78bfa] focus-visible:outline-none"
             title="Search Projects (Cmd+K)"
             id="nav-action-search"
+            aria-label="Search Projects"
           >
             <Search className="h-4.5 w-4.5" />
           </button>
 
           <button
             onClick={onSettingsOpen}
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-transparent text-[#94a3b8] hover:border-[rgba(255,255,255,0.08)] hover:bg-[#161616] hover:text-white transition-all duration-200"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-transparent text-[#94a3b8] hover:border-[rgba(255,255,255,0.08)] hover:bg-[#161616] hover:text-white transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#a78bfa] focus-visible:outline-none"
             title="System Settings"
             id="nav-action-settings"
+            aria-label="System Settings"
           >
             <Settings className="h-4.5 w-4.5" />
           </button>
 
           <button
             onClick={() => setActiveTab('contact')}
-            className="flex items-center gap-1.5 rounded-lg bg-[#a78bfa] px-4.5 py-2 font-sans text-[10px] font-bold uppercase tracking-[0.15em] text-[#0a0a0a] hover:brightness-110 active:scale-95 transition-all shadow-md shadow-[#a78bfa]/15 duration-200"
+            className="flex items-center gap-1.5 rounded-lg bg-[#a78bfa] px-4.5 py-2 font-sans text-[10px] font-bold uppercase tracking-[0.15em] text-[#0a0a0a] hover:brightness-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none transition-all shadow-md shadow-[#a78bfa]/15 duration-200"
             id="nav-action-contact"
           >
             Get in Touch
