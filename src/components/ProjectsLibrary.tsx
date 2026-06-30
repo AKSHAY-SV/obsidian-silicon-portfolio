@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { PROJECTS } from '../data';
 import { Project } from '../types';
 import { Cpu, ArrowUpRight, ShieldCheck, Cpu as ChipIcon, FileText, Code, CheckCircle, Flame, Layers, Award, RefreshCw, Copy, Check } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 
 import RTLExplorer from './RTLExplorer';
 import ASICFlow from './ASICFlow';
@@ -15,14 +15,92 @@ import EightBitComputerDetail from './EightBitComputerDetail';
 export default function ProjectsLibrary() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [activeProject, setActiveProject] = useState<Project | null>(null);
+
+  const handleSetActiveProject = (proj: Project | null) => {
+    setActiveProject(proj);
+    if (proj) {
+      sessionStorage.setItem('silicon_copilot_current_project', proj.name);
+      try {
+        const current = JSON.parse(sessionStorage.getItem('silicon_copilot_opened_projects') || '[]');
+        if (!current.includes(proj.name)) {
+          current.push(proj.name);
+          sessionStorage.setItem('silicon_copilot_opened_projects', JSON.stringify(current));
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      sessionStorage.removeItem('silicon_copilot_current_project');
+    }
+    window.dispatchEvent(new Event('silicon_copilot_sync'));
+  };
   const [copiedFile, setCopiedFile] = useState<string | null>(null);
   const [activeCycle, setActiveCycle] = useState<number>(2); // Waveform selector
 
+  // Advanced Filtering States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTech, setSelectedTech] = useState('All');
+  const [selectedDifficulty, setSelectedDifficulty] = useState('All');
+  const [selectedTool, setSelectedTool] = useState('All');
+  const [sortBy, setSortBy] = useState('default');
+  const [showFilters, setShowFilters] = useState(false);
+
   const categories = ['All', 'ASIC', 'FPGA', 'Computer Arch', 'Verification'];
 
-  const filteredProjects = selectedCategory === 'All'
-    ? PROJECTS
-    : PROJECTS.filter(p => p.category === selectedCategory);
+  // Helper to resolve project physical parameters for filtering
+  const getProjectMeta = (id: string) => {
+    switch(id) {
+      case 'rv32im-core':
+        return { difficulty: 'Advanced', tools: ['Verilator', 'OpenSTA', 'FPGA'], tech: ['RTL', 'FPGA'], frequency: 180, luts: 4280 };
+      case 'helios-7-soc':
+        return { difficulty: 'Advanced', tools: ['Cadence', 'Synopsys'], tech: ['ASIC', 'RTL'], frequency: 1200, luts: 28000000 };
+      case 'axi4-interconnect':
+        return { difficulty: 'Advanced', tools: ['ModelSim', 'UVM', 'FPGA'], tech: ['RTL', 'FPGA'], frequency: 350, luts: 8450 };
+      case 'l2-cache-controller':
+        return { difficulty: 'Advanced', tools: ['ModelSim', 'SymbiYosys'], tech: ['RTL', 'Research'], frequency: 200, luts: 12240 };
+      case 'eight-bit-computer':
+        return { difficulty: 'Intermediate', tools: ['Vivado', 'XSim'], tech: ['RTL', 'FPGA'], frequency: 50, luts: 342 };
+      default:
+        return { difficulty: 'Intermediate', tools: [], tech: ['RTL'], frequency: 0, luts: 0 };
+    }
+  };
+
+  // Filter & Sort Logic
+  const filteredProjects = PROJECTS.filter(proj => {
+    const meta = getProjectMeta(proj.id);
+    
+    // Category pill check
+    if (selectedCategory !== 'All' && proj.category !== selectedCategory) return false;
+    
+    // Tech check
+    if (selectedTech !== 'All' && !meta.tech.includes(selectedTech)) return false;
+    
+    // Difficulty check
+    if (selectedDifficulty !== 'All' && meta.difficulty !== selectedDifficulty) return false;
+    
+    // Tool check
+    if (selectedTool !== 'All' && !meta.tools.some(t => t.toLowerCase() === selectedTool.toLowerCase())) return false;
+    
+    // Search query check
+    if (searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase();
+      const matchName = proj.name.toLowerCase().includes(q);
+      const matchTagline = proj.tagline.toLowerCase().includes(q);
+      const matchTech = proj.techStack.some(t => t.toLowerCase().includes(q));
+      if (!matchName && !matchTagline && !matchTech) return false;
+    }
+    
+    return true;
+  });
+
+  // Sort Logic
+  if (sortBy === 'name') {
+    filteredProjects.sort((a, b) => a.name.localeCompare(b.name));
+  } else if (sortBy === 'frequency') {
+    filteredProjects.sort((a, b) => getProjectMeta(b.id).frequency - getProjectMeta(a.id).frequency);
+  } else if (sortBy === 'luts') {
+    filteredProjects.sort((a, b) => getProjectMeta(b.id).luts - getProjectMeta(a.id).luts);
+  }
 
   const handleCopyCode = (filename: string, code: string) => {
     navigator.clipboard.writeText(code);
@@ -63,42 +141,153 @@ export default function ProjectsLibrary() {
               </p>
             </div>
 
-            {/* Categorization Pills */}
-            <div className="mb-8 flex flex-wrap items-center justify-center md:justify-start gap-3 border-b border-[rgba(255,255,255,0.06)] pb-6">
-              {categories.map((cat) => {
-                const isActive = selectedCategory === cat;
-                return (
+            {/* Navigation and Advanced Filters Bar */}
+            <div className="mb-8 flex flex-col gap-5 border-b border-[rgba(255,255,255,0.06)] pb-6">
+              
+              {/* Category Pills & Search Row */}
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
+                  {categories.map((cat) => {
+                    const isActive = selectedCategory === cat;
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setSelectedCategory(cat)}
+                        className="relative px-5 py-2 font-sans text-xs font-bold tracking-wide uppercase transition-colors duration-300 rounded-full overflow-hidden"
+                      >
+                        <span className={`relative z-10 transition-colors duration-300 ${
+                          isActive ? 'text-[#0a0a0a]' : 'text-[#94a3b8] hover:text-white'
+                        }`}>
+                          {cat}
+                        </span>
+                        {isActive && (
+                          <motion.span
+                            layoutId="activeCategoryPill"
+                            className="absolute inset-0 bg-gradient-to-r from-[#a78bfa] to-[#c084fc] rounded-full shadow-lg shadow-[#a78bfa]/20 z-0"
+                            transition={{ type: 'spring', stiffness: 350, damping: 26 }}
+                          />
+                        )}
+                        {!isActive && (
+                          <span className="absolute inset-0 bg-[#121212] border border-[rgba(255,255,255,0.06)] rounded-full -z-10 hover:bg-[#1a1a1a] transition-colors" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Filter and Search controls */}
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                  <div className="relative flex-1 md:w-64">
+                    <input
+                      type="text"
+                      placeholder="Search architecture database..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full bg-[#121212] border border-[rgba(255,255,255,0.08)] rounded-lg px-4 py-2 font-mono text-xs text-white focus:outline-none focus:border-[#a78bfa]/50"
+                    />
+                  </div>
+
                   <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
-                    className="relative px-5 py-2 font-sans text-xs font-bold tracking-wide uppercase transition-colors duration-300 rounded-full overflow-hidden"
+                    onClick={() => setShowFilters(!showFilters)}
+                    className={`px-4 py-2 rounded-lg border font-mono text-xs uppercase font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      showFilters || selectedTech !== 'All' || selectedDifficulty !== 'All' || selectedTool !== 'All' || sortBy !== 'default'
+                        ? 'bg-purple-900/20 border-[#a78bfa] text-[#a78bfa]'
+                        : 'bg-[#121212] border-[rgba(255,255,255,0.06)] text-slate-400 hover:text-white'
+                    }`}
                   >
-                    <span className={`relative z-10 transition-colors duration-300 ${
-                      isActive ? 'text-[#0a0a0a]' : 'text-[#94a3b8] hover:text-white'
-                    }`}>
-                      {cat}
-                    </span>
-                    {isActive && (
-                      <motion.span
-                        layoutId="activeCategoryPill"
-                        className="absolute inset-0 bg-gradient-to-r from-[#a78bfa] to-[#c084fc] rounded-full shadow-lg shadow-[#a78bfa]/20 z-0"
-                        transition={{ type: 'spring', stiffness: 350, damping: 26 }}
-                      />
-                    )}
-                    {!isActive && (
-                      <span className="absolute inset-0 bg-[#121212] border border-[rgba(255,255,255,0.06)] rounded-full -z-10 hover:bg-[#1a1a1a] transition-colors" />
-                    )}
+                    ⚙️ Parameters
                   </button>
-                );
-              })}
+                </div>
+              </div>
+
+              {/* Collapsible Parameters Filters Panel */}
+              <AnimatePresence>
+                {showFilters && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden bg-[#0a0a0a] border border-[rgba(255,255,255,0.05)] rounded-xl p-5"
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-5 font-mono text-[11px] uppercase">
+                      
+                      {/* Tech Filter */}
+                      <div>
+                        <span className="text-[#a78bfa] font-bold block mb-2">// Tech Core Target:</span>
+                        <select
+                          value={selectedTech}
+                          onChange={(e) => setSelectedTech(e.target.value)}
+                          className="w-full bg-[#121212] border border-[rgba(255,255,255,0.06)] rounded px-3 py-2 text-white focus:outline-none"
+                        >
+                          <option value="All">All Technologies</option>
+                          <option value="RTL">RTL HDL Designs</option>
+                          <option value="ASIC">ASIC Signoff</option>
+                          <option value="FPGA">FPGA Target Maps</option>
+                          <option value="Research">Coherence Research</option>
+                        </select>
+                      </div>
+
+                      {/* Difficulty */}
+                      <div>
+                        <span className="text-[#a78bfa] font-bold block mb-2">// Block Complexity:</span>
+                        <select
+                          value={selectedDifficulty}
+                          onChange={(e) => setSelectedDifficulty(e.target.value)}
+                          className="w-full bg-[#121212] border border-[rgba(255,255,255,0.06)] rounded px-3 py-2 text-white focus:outline-none"
+                        >
+                          <option value="All">All Difficulties</option>
+                          <option value="Intermediate">Intermediate Blocks</option>
+                          <option value="Advanced">Advanced Architectures</option>
+                        </select>
+                      </div>
+
+                      {/* Tools Used */}
+                      <div>
+                        <span className="text-[#a78bfa] font-bold block mb-2">// EDA Compiler Tool:</span>
+                        <select
+                          value={selectedTool}
+                          onChange={(e) => setSelectedTool(e.target.value)}
+                          className="w-full bg-[#121212] border border-[rgba(255,255,255,0.06)] rounded px-3 py-2 text-white focus:outline-none"
+                        >
+                          <option value="All">All EDA Systems</option>
+                          <option value="Cadence">Cadence Virtuoso/Innovus</option>
+                          <option value="Synopsys">Synopsys Design Compiler</option>
+                          <option value="Verilator">Verilator C++ Models</option>
+                          <option value="ModelSim">ModelSim Wave Simulator</option>
+                          <option value="SymbiYosys">SymbiYosys Formal Checker</option>
+                          <option value="Vivado">Xilinx Vivado</option>
+                        </select>
+                      </div>
+
+                      {/* Sorting */}
+                      <div>
+                        <span className="text-[#a78bfa] font-bold block mb-2">// Order Registers By:</span>
+                        <select
+                          value={sortBy}
+                          onChange={(e) => setSortBy(e.target.value)}
+                          className="w-full bg-[#121212] border border-[rgba(255,255,255,0.06)] rounded px-3 py-2 text-white focus:outline-none"
+                        >
+                          <option value="default">Default Address</option>
+                          <option value="name">Alphabetical (A-Z)</option>
+                          <option value="frequency">Signoff Frequency (Hz)</option>
+                          <option value="luts">Logic Density (LUTs / Transistors)</option>
+                        </select>
+                      </div>
+
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
             </div>
 
-            {/* Grid of Projects */}
+            {/* Grid of Projects with Layout Animations */}
             <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
               {filteredProjects.map((proj) => (
-                <div
+                <motion.div
+                  layout
                   key={proj.id}
-                  onClick={() => setActiveProject(proj)}
+                  onClick={() => handleSetActiveProject(proj)}
                   className="group relative flex flex-col overflow-hidden rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#121212] cursor-pointer transition-all duration-500 hover:border-[#a78bfa]/50 hover:shadow-2xl hover:shadow-[#a78bfa]/10 hover:-translate-y-1.5"
                   id={`project-card-${proj.id}`}
                 >
@@ -188,20 +377,20 @@ export default function ProjectsLibrary() {
                     </div>
 
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
         ) : activeProject.id === 'rv32im-core' ? (
-          <RV32IMSoCDetail onClose={() => setActiveProject(null)} />
+          <RV32IMSoCDetail onClose={() => handleSetActiveProject(null)} />
         ) : activeProject.id === 'eight-bit-computer' ? (
-          <EightBitComputerDetail onClose={() => setActiveProject(null)} />
+          <EightBitComputerDetail onClose={() => handleSetActiveProject(null)} />
         ) : (
           // Detailed Project View
           <div className="animate-in fade-in duration-300">
             {/* Back Button */}
             <button
-              onClick={() => setActiveProject(null)}
+              onClick={() => handleSetActiveProject(null)}
               className="mb-8 flex items-center gap-2 rounded-lg border border-[rgba(255,255,255,0.1)] bg-[#121212] px-4 py-2 font-mono text-xs uppercase tracking-wider text-[#94a3b8] hover:bg-[#1a1a1a] hover:text-white transition-all"
             >
               ← Return to Library

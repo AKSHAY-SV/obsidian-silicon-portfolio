@@ -6,7 +6,7 @@ interface CopilotResponse {
   followUps: string[];
 }
 
-export function generateLocalResponse(query: string): CopilotResponse {
+function _generateRawResponse(query: string): CopilotResponse {
   const lowerQuery = query.toLowerCase().trim();
 
   // 1. HELIOS-7 SOC INTENT
@@ -480,5 +480,98 @@ Akshay Srikrishnan's engineering database has registered this request. While the
 *   **Primary Academic Institution**: Manipal Institute of Technology, Bengaluru, specializing in VLSI Design & Technology.
 
 Feel free to query specific topics such as the **RV32IM processor pipeline**, **Helios-7 SoC area**, **MESI cache states**, or his **Arm certification** to unlock deep SystemVerilog code blocks and physical design metrics!`
+  };
+}
+
+function adaptResponseToMode(baseResponse: string, mode: string, query: string): string {
+  const modeLower = mode.toLowerCase();
+  
+  if (modeLower.includes("student")) {
+    return `> 🎓 **Engineering Mode: Student (Pedagogical Viewpoint)**
+> *This response is customized with simplified analogies and key microelectronics concept highlights.*
+
+${baseResponse}
+
+---
+#### 📚 Student Study Corner: VLSI Analogy
+*   **Pipeline Stages Analogy**: Think of a 5-stage CPU pipeline like an assembly line for washing dishes. One person washes (Fetch), one rinses (Decode), one scrubs (Execute), one dries (Memory), and one puts away (Writeback). Instead of waiting for one dish to go through all steps before starting the next, a new dish enters the line every clock cycle!
+*   **MESI Coherence Analogy**: Imagine 4 kids drawing on whiteboards. If kid A changes a drawing (Modified), they must tell everyone else so they don't look at old drawings (Invalidate). If they are just looking (Shared), they can all read without talking!
+*   **FinFET (7nm Node) Analogy**: Traditional flat transistors are like doors that leak air at the bottom. FinFET is like wrapping a door on three sides (a 3D "fin") to completely seal it, allowing virtually zero leakage current when turned off!`;
+  }
+  
+  if (modeLower.includes("recruiter")) {
+    return `> 💼 **Engineering Mode: Recruiter (Professional Fit)**
+> *This response highlights Akshay's industrial engineering value, team collaboration competence, and technical mastery.*
+
+${baseResponse}
+
+---
+#### 🌟 Professional Fit & Placement Highlights
+*   **Hardware Tapeout Ready**: Akshay has concrete micro-architecture models validated down to TSMC 7nm technology PDK specifications.
+*   **Advanced Toolchain Command**: Mastery of industry-standard physical design suites (**Cadence Innovus**, **Synopsys Design Compiler**, **Synopsys PrimeTime**) as well as FPGA design flows (**Xilinx Vivado**).
+*   **Academic Excellence**: Active leader at MIT Bengaluru, backed by professional credentials verified by **Arm Education** (Verification ID: 3NJZHUFQWWDF) and **University of Colorado Boulder**.
+*   **Core Value**: He is fully equipped to hit the ground running on digital design, RTL synthesis, formal validation, and physical clock tree routing tasks in top-tier semiconductor teams.`;
+  }
+  
+  if (modeLower.includes("rtl") || modeLower.includes("rtl engineer")) {
+    return `> 💻 **Engineering Mode: RTL Engineer (Logic Design Focus)**
+> *Customized with detailed hardware description rules, synthesis directives, and structural logic parameters.*
+
+${baseResponse}
+
+---
+#### 🛠️ RTL Compiler & Logic Synthesis Guidelines
+*   **Clock-Gating Cell Insertion**: To minimize dynamic power dissipation, Akshay configures integrated clock-gating (ICG) cells in the synthesizable RTL.
+*   **CDC (Clock Domain Crossing)**: Deploys double-flop synchronizers and asynchronous FIFOs with gray-coded pointers for safe data crossing across asynchronous clock boundaries.
+*   **Synthesis Constraints**: Structural RTL design is fully compliant with modern synthesis constraints, avoiding latch generation and checking for clean combinational feedback loops.`;
+  }
+  
+  if (modeLower.includes("asic") || modeLower.includes("asic engineer")) {
+    return `> 🛰️ **Engineering Mode: ASIC Engineer (Physical Design Focus)**
+> *Customized with 7nm FinFET PDK layout rules, physical boundary parameters, and clock tree layout specs.*
+
+${baseResponse}
+
+---
+#### 📐 ASIC Physical Implementation Constraints (GDSII)
+*   **Power Distribution Network (PDN)**: Mapped using thick copper layers (Metal 7 & Metal 8) with a dual-grid mesh topology to keep peak dynamic IR voltage droops below 5% at the cell terminals.
+*   **MSCTS (Multi-Source Clock Tree Synthesis)**: Clock lines are routed via balanced global H-Tree networks inside Innovus, checking hold-time closure with strict Static Timing Analysis (STA) across all Multi-Corner Multi-Mode (MCMM) views.
+*   **Antenna Rule Violations**: Cleared using structural diode insertion on long metal segments to prevent gate-oxide breakdown during plasma etching.`;
+  }
+  
+  if (modeLower.includes("embedded")) {
+    return `> 🔌 **Engineering Mode: Embedded Engineer (Hardware/Software Co-Design)**
+> *Customized with memory registers, firmware APIs, and hardware-software interface boundaries.*
+
+${baseResponse}
+
+---
+#### 💾 Low-Level Hardware Interface & Bare-Metal Driver Map
+*   **Memory-Mapped Registers**: Peripheral controls are fully memory-mapped, enabling direct access via C pointer register dereferences.
+*   **Interrupt Latency Optimization**: Interrupt Service Routines (ISRs) are optimized for low clock-cycle counts, with immediate register-file state saving and restoring.
+*   **AXI DMA Transfer Interfaces**: Interfaced with high-speed burst DMA engines to offload memory copying transactions from the primary RISC-V execution pipeline core.`;
+  }
+  
+  if (modeLower.includes("interviewer")) {
+    return `> 📋 **Engineering Mode: Technical Interviewer (Challenge Viewpoint)**
+> *Customized with deep architectural challenge breakdowns, validation proofs, and candidate screening quiz questions.*
+
+${baseResponse}
+
+---
+#### 🧠 Candidate Screening Quiz - Challenge Akshay's Design:
+*   *Q1*: How does your hazard forwarding network handle back-to-back Load-to-Use dependencies? (Answer: Load-to-Use dependencies cannot be solved purely by forwarding; the compiler or hazard unit must insert a 1-cycle stall bubble).
+*   *Q2*: In your MESI cache controller, how do you handle simultaneous Bus Read and Local Write transactions to the same cacheline index without causing a coherence deadlock?
+*   *Q3*: What specific timing closure techniques did you use when Cadence Innovus encountered congestion-induced routing delays in the Systolic Array NPU?`;
+  }
+  
+  return baseResponse;
+}
+
+export function generateLocalResponse(query: string, mode: string = "RTL Engineer"): CopilotResponse {
+  const rawResult = _generateRawResponse(query);
+  return {
+    ...rawResult,
+    response: adaptResponseToMode(rawResult.response, mode, query)
   };
 }

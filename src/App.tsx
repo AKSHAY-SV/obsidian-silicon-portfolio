@@ -14,6 +14,13 @@ import Gallery from './components/Gallery';
 import Resume from './components/Resume';
 import Contact from './components/Contact';
 import SiliconCopilot from './components/copilot/SiliconCopilot';
+
+import WorkstationDashboard from './components/WorkstationDashboard';
+import EngineeringRoadmap from './components/EngineeringRoadmap';
+import RV32IMShowcase from './components/RV32IMShowcase';
+import DesignFlowVisualizer from './components/DesignFlowVisualizer';
+import EngineeringToolchain from './components/EngineeringToolchain';
+
 import { motion, AnimatePresence } from 'motion/react';
 
 import {
@@ -52,6 +59,35 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Synchronize visited tabs and search queries to sessionStorage for Copilot Context
+  useEffect(() => {
+    try {
+      const currentPages = JSON.parse(sessionStorage.getItem('silicon_copilot_visited_pages') || '[]');
+      if (!currentPages.includes(activeTab)) {
+        currentPages.push(activeTab);
+        sessionStorage.setItem('silicon_copilot_visited_pages', JSON.stringify(currentPages));
+        window.dispatchEvent(new Event('silicon_copilot_sync'));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (searchQuery.trim().length > 2) {
+      try {
+        const currentSearches = JSON.parse(sessionStorage.getItem('silicon_copilot_searches') || '[]');
+        if (!currentSearches.includes(searchQuery.trim())) {
+          currentSearches.push(searchQuery.trim());
+          sessionStorage.setItem('silicon_copilot_searches', JSON.stringify(currentSearches));
+          window.dispatchEvent(new Event('silicon_copilot_sync'));
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, [searchQuery]);
+
   const handleCopyResumeText = () => {
     const resumeText = `AKSHAY SRIKRISHNAN - SILICON ARCHITECT & RTL ENGINEER
 Email: crazyplayz61@gmail.com
@@ -72,7 +108,7 @@ Tapeouts: Helios-7 Edge AI SoC (TSMC 7nm), RV32IM Processor (Artix-7), L2 MESI C
       );
 
   return (
-    <div className="min-h-screen w-full bg-[#0a0a0a] text-white flex flex-col justify-between selection:bg-[#a78bfa]/30 selection:text-white" id="root-viewport">
+    <div className="min-h-screen w-full bg-[#0a0a0a] bg-semiconductor-grid bg-wafer-rings text-white flex flex-col justify-between selection:bg-[#a78bfa]/30 selection:text-white" id="root-viewport">
       
       {/* Sticky TopNavBar */}
       <TopNavBar
@@ -150,56 +186,20 @@ Tapeouts: Helios-7 Edge AI SoC (TSMC 7nm), RV32IM Processor (Artix-7), L2 MESI C
               <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#a78bfa]/30 to-transparent" />
             </section>
 
-            {/* Section 2: Live Metrics Dashboard (Numbers Count Up) */}
-            <section className="py-12 border-b border-[rgba(255,255,255,0.06)] bg-[#0e0e0e]" id="metrics-dashboard">
-              <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-                  
-                  {/* Metric 1 */}
-                  <div className="rounded-lg border border-[rgba(255,255,255,0.05)] bg-[#121212] p-6 text-center group hover:border-[#a78bfa]/20 transition-all">
-                    <span className="block font-mono text-[10px] uppercase font-bold tracking-widest text-[#94a3b8]">
-                      COMPILING RTL MODULES
-                    </span>
-                    <span className="mt-2 block font-sans text-4xl font-black text-[#a78bfa] tracking-tight">
-                      142
-                    </span>
-                    <div className="mx-auto mt-3 h-0.5 w-12 bg-[#a78bfa]/40 group-hover:w-20 transition-all" />
-                    <span className="mt-2 block font-mono text-[10px] text-slate-500 uppercase">
-                      Synthesizable Cores & IP blocks
-                    </span>
-                  </div>
+            {/* Immersive Workstation Dashboard Panel */}
+            <WorkstationDashboard />
 
-                  {/* Metric 2 */}
-                  <div className="rounded-lg border border-[rgba(255,255,255,0.05)] bg-[#121212] p-6 text-center group hover:border-[#a78bfa]/20 transition-all">
-                    <span className="block font-mono text-[10px] uppercase font-bold tracking-widest text-[#94a3b8]">
-                      VERIFIED LOGIC LINES
-                    </span>
-                    <span className="mt-2 block font-sans text-4xl font-black text-white tracking-tight">
-                      48.5K
-                    </span>
-                    <div className="mx-auto mt-3 h-0.5 w-12 bg-[#a78bfa]/20 group-hover:w-20 transition-all" />
-                    <span className="mt-2 block font-mono text-[10px] text-slate-500 uppercase">
-                      Verilog & SystemVerilog specs
-                    </span>
-                  </div>
+            {/* Interactive Engineering Roadmap */}
+            <EngineeringRoadmap />
 
-                  {/* Metric 3 */}
-                  <div className="rounded-lg border border-[rgba(255,255,255,0.05)] bg-[#121212] p-6 text-center group hover:border-[#10b981]/20 transition-all">
-                    <span className="block font-mono text-[10px] uppercase font-bold tracking-widest text-[#94a3b8]">
-                      PRODUCTION TAPEOUTS
-                    </span>
-                    <span className="mt-2 block font-sans text-4xl font-black text-[#10b981] tracking-tight">
-                      03
-                    </span>
-                    <div className="mx-auto mt-3 h-0.5 w-12 bg-[#10b981]/40 group-hover:w-20 transition-all" />
-                    <span className="mt-2 block font-mono text-[10px] text-slate-500 uppercase">
-                      Silicon Mask Streamouts verified
-                    </span>
-                  </div>
+            {/* Flagship RV32IM CPU Showcase */}
+            <RV32IMShowcase />
 
-                </div>
-              </div>
-            </section>
+            {/* Automated Design Flow Visualizer */}
+            <DesignFlowVisualizer />
+
+            {/* Comprehensive Toolchain Matrix */}
+            <EngineeringToolchain />
 
             {/* Section 3: Featured Project (Helios-7 SoC) */}
             <section className="py-16 border-b border-[rgba(255,255,255,0.06)]" id="featured-project-showcase">
@@ -718,7 +718,7 @@ Tapeouts: Helios-7 Edge AI SoC (TSMC 7nm), RV32IM Processor (Artix-7), L2 MESI C
       )}
 
       {/* Silicon Copilot AI Assistant Flagship Feature */}
-      <SiliconCopilot />
+      <SiliconCopilot activeTab={activeTab} setActiveTab={setActiveTab} />
 
     </div>
   );

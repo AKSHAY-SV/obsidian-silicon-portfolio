@@ -1,15 +1,17 @@
 import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { motion } from "motion/react";
-import { Copy, Check, Terminal, Cpu, Clock, Compass } from "lucide-react";
+import { Copy, Check, Terminal, Cpu, Clock, Compass, Pin } from "lucide-react";
 import { CopilotMessage } from "../../types/copilot";
 
 interface MessageBubbleProps {
   message: CopilotMessage;
   onFollowUpClick: (q: string) => void;
+  onPinToggle?: (id: string) => void;
+  isPinned?: boolean;
 }
 
-export default function MessageBubble({ message, onFollowUpClick }: MessageBubbleProps) {
+export default function MessageBubble({ message, onFollowUpClick, onPinToggle, isPinned = false }: MessageBubbleProps) {
   const [copied, setCopied] = useState(false);
   const isAssistant = message.role === "assistant";
 
@@ -109,6 +111,21 @@ export default function MessageBubble({ message, onFollowUpClick }: MessageBubbl
             </div>
           ) : (
             <p className="font-sans text-xs whitespace-pre-wrap">{message.content}</p>
+          )}
+
+          {/* Pin bubble content floating overlay button */}
+          {isAssistant && onPinToggle && (
+            <button
+              onClick={() => onPinToggle(message.id)}
+              className={`absolute top-2 right-10 p-1.5 rounded-lg border transition-all duration-200 opacity-0 group-hover:opacity-100 ${
+                isPinned
+                  ? "bg-purple-950/60 border-purple-800/40 text-yellow-400"
+                  : "bg-zinc-950/60 border-zinc-800/40 text-zinc-500 hover:text-yellow-400"
+              }`}
+              title={isPinned ? "Unpin message" : "Pin response for reference"}
+            >
+              <Pin className="h-3.5 w-3.5" />
+            </button>
           )}
 
           {/* Copy bubble content floating overlay button */}

@@ -4,7 +4,7 @@ import { useCopilot } from "../../hooks/useCopilot";
 import CopilotButton from "./CopilotButton";
 import CopilotWindow from "./CopilotWindow";
 
-export default function SiliconCopilot() {
+export default function SiliconCopilot({ activeTab, setActiveTab }: { activeTab?: string; setActiveTab?: (tab: any) => void }) {
   const copilotState = useCopilot();
 
   return (

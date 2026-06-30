@@ -27,6 +27,76 @@ export function useCopilot() {
     popularProjects: [],
   });
 
+  const [workspaceMode, setWorkspaceModeState] = useState<'compact' | 'fullscreen' | null>(() => {
+    return sessionStorage.getItem("silicon_copilot_workspace_mode") as 'compact' | 'fullscreen' | null;
+  });
+  const [selectedMode, setSelectedModeState] = useState<string>(() => {
+    return localStorage.getItem("silicon_copilot_response_mode") || "RTL Engineer";
+  });
+  const [pinnedMessages, setPinnedMessages] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("silicon_copilot_pinned") || "[]");
+    } catch (e) {
+      return [];
+    }
+  });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [visitedPages, setVisitedPages] = useState<string[]>([]);
+  const [openedProjects, setOpenedProjects] = useState<string[]>([]);
+  const [researchArticlesViewed, setResearchArticlesViewed] = useState<string[]>([]);
+  const [searches, setSearches] = useState<string[]>([]);
+  const [currentProject, setCurrentProject] = useState("");
+
+  const setWorkspaceMode = useCallback((mode: 'compact' | 'fullscreen' | null) => {
+    setWorkspaceModeState(mode);
+    if (mode) {
+      sessionStorage.setItem("silicon_copilot_workspace_mode", mode);
+    } else {
+      sessionStorage.removeItem("silicon_copilot_workspace_mode");
+    }
+  }, []);
+
+  const setSelectedMode = useCallback((mode: string) => {
+    setSelectedModeState(mode);
+    localStorage.setItem("silicon_copilot_response_mode", mode);
+  }, []);
+
+  const togglePinMessage = useCallback((id: string) => {
+    setPinnedMessages(prev => {
+      const updated = prev.includes(id) ? prev.filter(mId => mId !== id) : [...prev, id];
+      localStorage.setItem("silicon_copilot_pinned", JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  useEffect(() => {
+    const syncContext = () => {
+      try {
+        const pages = JSON.parse(sessionStorage.getItem("silicon_copilot_visited_pages") || "[]");
+        const projects = JSON.parse(sessionStorage.getItem("silicon_copilot_opened_projects") || "[]");
+        const papers = JSON.parse(sessionStorage.getItem("silicon_copilot_research_viewed") || "[]");
+        const searchTerms = JSON.parse(sessionStorage.getItem("silicon_copilot_searches") || "[]");
+        const currentProj = sessionStorage.getItem("silicon_copilot_current_project") || "";
+
+        setVisitedPages(pages);
+        setOpenedProjects(projects);
+        setResearchArticlesViewed(papers);
+        setSearches(searchTerms);
+        setCurrentProject(currentProj);
+      } catch (e) {
+        console.error("Sync error in Copilot hook", e);
+      }
+    };
+
+    syncContext();
+    const interval = setInterval(syncContext, 1000);
+    window.addEventListener("silicon_copilot_sync", syncContext);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("silicon_copilot_sync", syncContext);
+    };
+  }, []);
+
   const abortControllerRef = useRef<AbortController | null>(null);
   const streamIntervalRef = useRef<any>(null);
 
@@ -184,7 +254,7 @@ export function useCopilot() {
 
     try {
       // Generate highly detailed technical local response
-      const localResult = generateLocalResponse(content);
+      const localResult = generateLocalResponse(content, selectedMode);
       const fullText = localResult.response;
       const sources = localResult.sources;
       const followUps = localResult.followUps;
@@ -342,5 +412,22 @@ export function useCopilot() {
     stopGeneration,
     clearConversation,
     regenerateLastResponse,
+    
+    // Full Screen and Engineering Workspace additions
+    workspaceMode,
+    setWorkspaceMode,
+    selectedMode,
+    setSelectedMode,
+    pinnedMessages,
+    togglePinMessage,
+    searchQuery,
+    setSearchQuery,
+    
+    // Session Context parameters
+    visitedPages,
+    openedProjects,
+    researchArticlesViewed,
+    searches,
+    currentProject,
   };
 }

@@ -209,13 +209,39 @@ export default function Research() {
   };
 
   const toggleExpand = (id: string) => {
+    const isExpanding = expandedId !== id;
     setExpandedId(expandedId === id ? null : id);
+    if (isExpanding) {
+      try {
+        const paper = publications.find(p => p.id === id);
+        if (paper) {
+          const current = JSON.parse(sessionStorage.getItem('silicon_copilot_research_viewed') || '[]');
+          if (!current.includes(paper.title)) {
+            current.push(paper.title);
+            sessionStorage.setItem('silicon_copilot_research_viewed', JSON.stringify(current));
+            window.dispatchEvent(new Event('silicon_copilot_sync'));
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
   };
 
   // Highlight featured article spec on-click (scrolling cleanly to spec table)
   const handleSelectFeatured = (pub: ResearchCardType) => {
     setActiveCategory('All');
     setExpandedId(pub.id);
+    try {
+      const current = JSON.parse(sessionStorage.getItem('silicon_copilot_research_viewed') || '[]');
+      if (!current.includes(pub.title)) {
+        current.push(pub.title);
+        sessionStorage.setItem('silicon_copilot_research_viewed', JSON.stringify(current));
+        window.dispatchEvent(new Event('silicon_copilot_sync'));
+      }
+    } catch (e) {
+      console.error(e);
+    }
     setTimeout(() => {
       document.getElementById(`latest-research-feed`)?.scrollIntoView({ behavior: 'smooth' });
     }, 150);
