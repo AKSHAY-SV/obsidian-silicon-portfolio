@@ -13,6 +13,7 @@ import Blog from './components/Blog';
 import Gallery from './components/Gallery';
 import Resume from './components/Resume';
 import Contact from './components/Contact';
+import SiliconCopilot from './components/copilot/SiliconCopilot';
 import { motion, AnimatePresence } from 'motion/react';
 
 import {
@@ -715,6 +716,9 @@ Tapeouts: Helios-7 Edge AI SoC (TSMC 7nm), RV32IM Processor (Artix-7), L2 MESI C
           </div>
         </div>
       )}
+
+      {/* Silicon Copilot AI Assistant Flagship Feature */}
+      <SiliconCopilot />
 
     </div>
   );
