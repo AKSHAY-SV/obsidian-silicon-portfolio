@@ -13,6 +13,7 @@ import Blog from './components/Blog';
 import Gallery from './components/Gallery';
 import Resume from './components/Resume';
 import Contact from './components/Contact';
+import { motion, AnimatePresence } from 'motion/react';
 
 import {
   Cpu, ArrowUpRight, ShieldCheck, Terminal, Settings2, HelpCircle,
@@ -82,10 +83,18 @@ Tapeouts: Helios-7 Edge AI SoC (TSMC 7nm), RV32IM Processor (Artix-7), L2 MESI C
       />
 
       {/* Main Content Area */}
-      <main className="flex-1">
-        
-        {/* HOMEPAGE VIEW (Unified Engineering Hub) */}
-        {activeTab === 'home' && (
+      <main className="flex-1 relative overflow-x-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.26, ease: 'easeInOut' }}
+            className="w-full h-full"
+          >
+            {/* HOMEPAGE VIEW (Unified Engineering Hub) */}
+            {activeTab === 'home' && (
           <div className="relative">
             
             {/* Section 1: Hero Scene */}
@@ -93,16 +102,29 @@ Tapeouts: Helios-7 Edge AI SoC (TSMC 7nm), RV32IM Processor (Artix-7), L2 MESI C
               {/* Interactive Vector 3D background */}
               <InteractiveHeroCanvas />
 
+              {/* Radial gradient mask to guarantee flawless typographic contrast */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(10,10,10,0.2)_0%,rgba(10,10,10,0.85)_100%)] pointer-events-none z-1" />
+
               {/* Glassmorphic Title overlay card */}
-              <div className="relative z-10 mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8 animate-fade-in">
-                <span className="text-[#a78bfa] font-mono text-xs uppercase tracking-[0.2em] mb-5 block">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.98, y: 15 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                className="relative z-10 mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8"
+              >
+                <motion.span
+                  initial={{ opacity: 0, letterSpacing: '0.12em' }}
+                  animate={{ opacity: 1, letterSpacing: '0.2em' }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
+                  className="text-[#a78bfa] font-mono text-xs uppercase tracking-[0.2em] mb-5 block font-bold"
+                >
                   ⚡ INTEGRATED CIRCUITS & SYSTEMS RESEARCH // v1.0.0
-                </span>
-                <h1 className="font-sans text-5xl font-black tracking-tighter leading-[0.95] text-white sm:text-7xl md:text-8xl uppercase">
+                </motion.span>
+                <h1 className="font-sans text-5xl font-black tracking-tight leading-[0.95] text-white sm:text-7xl md:text-8xl uppercase">
                   Akshay Srikrishnan:<br />
-                  <span className="text-[#a78bfa]">Architecting Silicon.</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#a78bfa] via-[#c084fc] to-[#e879f9]">Architecting Silicon.</span>
                 </h1>
-                <p className="mx-auto mt-8 max-w-2xl font-sans text-base text-slate-400 leading-relaxed">
+                <p className="mx-auto mt-8 max-w-2xl font-sans text-base text-slate-300 leading-relaxed">
                   Designing synthesizable micro-architectures, low-latency coherent cache fabrics, high-speed interconnect switches, and automating silicon physical implementation GDS flows.
                 </p>
                 
@@ -110,18 +132,18 @@ Tapeouts: Helios-7 Edge AI SoC (TSMC 7nm), RV32IM Processor (Artix-7), L2 MESI C
                 <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
                   <button
                     onClick={() => setActiveTab('projects')}
-                    className="w-full sm:w-auto rounded-lg bg-[#a78bfa] px-8 py-4 font-sans text-xs font-bold uppercase tracking-[0.15em] text-[#0a0a0a] hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-[#a78bfa]/15"
+                    className="w-full sm:w-auto rounded-lg bg-[#a78bfa] px-8 py-4 font-sans text-xs font-bold uppercase tracking-[0.15em] text-[#0a0a0a] hover:bg-[#b49dfb] active:scale-95 transition-all shadow-lg shadow-[#a78bfa]/25 duration-200 cursor-pointer"
                   >
                     Explore Architecture
                   </button>
                   <button
                     onClick={() => setActiveTab('about')}
-                    className="w-full sm:w-auto rounded-lg border border-[#a78bfa]/60 bg-transparent px-8 py-4 font-sans text-xs font-bold uppercase tracking-[0.15em] text-[#a78bfa] hover:bg-[#a78bfa]/5 active:scale-95 transition-all"
+                    className="w-full sm:w-auto rounded-lg border-2 border-[#a78bfa]/80 bg-transparent px-8 py-4 font-sans text-xs font-bold uppercase tracking-[0.15em] text-[#a78bfa] hover:bg-[#a78bfa]/10 active:scale-95 transition-all duration-200 cursor-pointer"
                   >
                     Meet the Architect
                   </button>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Bottom linear trace decorations */}
               <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#a78bfa]/30 to-transparent" />
@@ -430,7 +452,8 @@ Tapeouts: Helios-7 Edge AI SoC (TSMC 7nm), RV32IM Processor (Artix-7), L2 MESI C
 
         {/* CONTACT VIEW */}
         {activeTab === 'contact' && <Contact />}
-
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       {/* Global Footer component */}

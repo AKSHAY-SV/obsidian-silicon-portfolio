@@ -1,6 +1,6 @@
 {
   "name": "Obsidian Silicon Portfolio",
-  "description": "High-precision dark-themed engineering hub and interactive simulation suite for silicon architecture, RTL designs, and ASIC implementation flows.",
+  "description": "High-precision dark-themed engineering hub and interactive simulation suite for silicon architecture, RTL designs, 8-Bit accumulator microcomputers, and ASIC implementation flows.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

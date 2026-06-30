@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { PROJECTS } from '../data';
 import { Project } from '../types';
 import { Cpu, ArrowUpRight, ShieldCheck, Cpu as ChipIcon, FileText, Code, CheckCircle, Flame, Layers, Award, RefreshCw, Copy, Check } from 'lucide-react';
+import { motion } from 'motion/react';
 
 import RTLExplorer from './RTLExplorer';
 import ASICFlow from './ASICFlow';
 import SimPipeline from './SimPipeline';
 import SimCache from './SimCache';
 import SimMemory from './SimMemory';
+import RV32IMSoCDetail from './RV32IMSoCDetail';
+import EightBitComputerDetail from './EightBitComputerDetail';
 
 export default function ProjectsLibrary() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -61,20 +64,33 @@ export default function ProjectsLibrary() {
             </div>
 
             {/* Categorization Pills */}
-            <div className="mb-8 flex flex-wrap items-center justify-center md:justify-start gap-2.5 border-b border-[rgba(255,255,255,0.06)] pb-6">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`rounded-full px-5 py-2 font-sans text-xs font-semibold tracking-wide uppercase transition-all duration-300 ${
-                    selectedCategory === cat
-                      ? 'bg-[#a78bfa] text-[#0a0a0a] shadow-lg shadow-[#a78bfa]/20'
-                      : 'bg-[#121212] text-[#94a3b8] border border-[rgba(255,255,255,0.06)] hover:bg-[#1a1a1a] hover:text-white'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
+            <div className="mb-8 flex flex-wrap items-center justify-center md:justify-start gap-3 border-b border-[rgba(255,255,255,0.06)] pb-6">
+              {categories.map((cat) => {
+                const isActive = selectedCategory === cat;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className="relative px-5 py-2 font-sans text-xs font-bold tracking-wide uppercase transition-colors duration-300 rounded-full overflow-hidden"
+                  >
+                    <span className={`relative z-10 transition-colors duration-300 ${
+                      isActive ? 'text-[#0a0a0a]' : 'text-[#94a3b8] hover:text-white'
+                    }`}>
+                      {cat}
+                    </span>
+                    {isActive && (
+                      <motion.span
+                        layoutId="activeCategoryPill"
+                        className="absolute inset-0 bg-gradient-to-r from-[#a78bfa] to-[#c084fc] rounded-full shadow-lg shadow-[#a78bfa]/20 z-0"
+                        transition={{ type: 'spring', stiffness: 350, damping: 26 }}
+                      />
+                    )}
+                    {!isActive && (
+                      <span className="absolute inset-0 bg-[#121212] border border-[rgba(255,255,255,0.06)] rounded-full -z-10 hover:bg-[#1a1a1a] transition-colors" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Grid of Projects */}
@@ -83,7 +99,7 @@ export default function ProjectsLibrary() {
                 <div
                   key={proj.id}
                   onClick={() => setActiveProject(proj)}
-                  className="group relative flex flex-col overflow-hidden rounded-lg border border-[rgba(255,255,255,0.08)] bg-[#121212] cursor-pointer transition-all duration-300 hover:border-[#a78bfa]/40 hover:shadow-xl hover:shadow-[#a78bfa]/5 hover:-translate-y-1"
+                  className="group relative flex flex-col overflow-hidden rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#121212] cursor-pointer transition-all duration-500 hover:border-[#a78bfa]/50 hover:shadow-2xl hover:shadow-[#a78bfa]/10 hover:-translate-y-1.5"
                   id={`project-card-${proj.id}`}
                 >
                   {/* Image Aspect ratio container */}
@@ -176,6 +192,10 @@ export default function ProjectsLibrary() {
               ))}
             </div>
           </div>
+        ) : activeProject.id === 'rv32im-core' ? (
+          <RV32IMSoCDetail onClose={() => setActiveProject(null)} />
+        ) : activeProject.id === 'eight-bit-computer' ? (
+          <EightBitComputerDetail onClose={() => setActiveProject(null)} />
         ) : (
           // Detailed Project View
           <div className="animate-in fade-in duration-300">

@@ -326,6 +326,55 @@ always @(*) begin
         MODIFIED:  if (snoop_read)    next_state = SHARED;
     endcase
 end`
+  },
+  {
+    id: 'eight-bit-computer',
+    name: '8-BIT_COMPUTER',
+    category: 'Computer Arch',
+    tagline: 'Classic Accumulator-Based von Neumann 8-Bit Computer',
+    description: 'A complete custom accumulator-based 8-bit computer implemented in synthesizable Verilog. Follows a classical von Neumann architecture, coordinated over an 8-bit shared tri-state bus. Features a custom 16-instruction ISA microsequenced by a control unit state machine and verified cycle-by-cycle inside Xilinx Vivado XSim.',
+    techStack: ['Verilog HDL', 'Vivado', 'Xilinx XSim', 'Computer Architecture', 'Digital Design'],
+    image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=600&auto=format&fit=crop',
+    metrics: {
+      lutCount: '342 LUTs',
+      timingSlack: '+4.12 ns @ 50MHz',
+      area: 'FPGA Artix-7 Mapping',
+      power: '4.2 mW (Est.)',
+      frequency: '50 MHz'
+    },
+    specs: [
+      { label: 'Architecture Type', value: 'Accumulator-based von Neumann' },
+      { label: 'Data Width', value: '8-bit Word' },
+      { label: 'Address Space', value: '4-bit (16 addressed Bytes)' },
+      { label: 'Instruction Set', value: '16 core operations (Custom ISA)' },
+      { label: 'Bus Structure', value: '8-bit shared tri-state parallel' },
+      { label: 'Verification Tools', value: 'Xilinx Vivado XSim RTL Simulator' }
+    ],
+    challenges: [
+      {
+        problem: 'Logical bus contention and dynamic meta-stability risks when multiple registers drive high/low values onto the shared 8-bit bus concurrently.',
+        solution: 'Implemented high-impedance tri-state buffers (assign bus = output_enable ? register_data : 8\'bZ) on all modules connected to the shared interconnect. Integrated mutually-exclusive output control signals in the microsequence decoder to ensure at most one transmitter active per T-state.'
+      },
+      {
+        problem: 'Flickering ALU comparison outputs and asynchronous timing loops causing unstable conditional branching flags on LDA, ADD and SUB commands.',
+        solution: 'Isolated ALU carry and zero calculation paths by synchronizing physical flag outputs into a dedicated Flags Register. The register is latched on the positive clock edge only when the alu_flags_load control line is active, stabilizing jump calculations.'
+      }
+    ],
+    files: [
+      {
+        name: 'complete.v',
+        path: 'cores/8bit/complete.v',
+        content: `// =================================================================\n// PROJECT: 8-BIT_COMPUTER_DESIGN\n// FILE: complete.v\n// DESCRIPTION: Top-level module coordinating upper/lower blocks\n// =================================================================\n\nmodule complete (\n    input wire clk,\n    input wire rst_n,\n    output wire [7:0] out_display\n);\n\n    // --- SHARED TRI-STATE BUS ---\n    wire [7:0] bus;\n\n    // --- CONTROL BUS SIGNALS ---\n    wire [15:0] ctrl;\n    wire [3:0] pc_val, mar_val;\n    wire [7:0] ram_val, ir_val, acc_val, regb_val, alu_val;\n    wire [2:0] flags; // [Carry, Zero, Negative]\n\n    // Upper Layer Instance (Registers & PC)\n    upper upper_inst (\n        .clk(clk),\n        .rst_n(rst_n),\n        .bus(bus),\n        .ctrl(ctrl),\n        .pc_out(pc_val),\n        .mar_out(mar_val),\n        .ir_out(ir_val),\n        .acc_out(acc_val)\n    );\n\n    // Lower Layer Instance (ALU, Reg B, Flags)\n    lower lower_inst (\n        .clk(clk),\n        .rst_n(rst_n),\n        .bus(bus),\n        .ctrl(ctrl),\n        .acc_in(acc_val),\n        .regb_out(regb_val),\n        .alu_out(alu_val),\n        .flags_out(flags)\n    );\n\n    // Control Unit (Microprogrammed State Machine)\n    control_unit cu_inst (\n        .clk(clk),\n        .rst_n(rst_n),\n        .opcode(ir_val[7:4]),\n        .flags(flags),\n        .ctrl(ctrl)\n    );\n\n    // Output Latch Register\n    OutputRegister out_reg (\n        .clk(clk),\n        .load(ctrl[12]), // out_load\n        .in_val(bus),\n        .out_val(out_display)\n    );\n\nendmodule`,
+        size: '1.9 KB'
+      },
+      {
+        name: 'control_unit.v',
+        path: 'cores/8bit/control_unit.v',
+        content: `// =================================================================\n// PROJECT: 8-BIT_COMPUTER_DESIGN\n// FILE: control_unit.v\n// DESCRIPTION: Microsequencer decoder generating control signals\n// =================================================================\n\nmodule control_unit (\n    input wire clk,\n    input wire rst_n,\n    input wire [3:0] opcode,\n    input wire [2:0] flags, // [Carry, Zero, Negative]\n    output reg [15:0] ctrl\n);\n\n    reg [2:0] t_state;\n\n    // T-States Sequencer (6-state clock machine)\n    always @(posedge clk or negedge rst_n) begin\n        if (!rst_n) begin\n            t_state <= 3'd1;\n        end else begin\n            if (t_state == 3'd6) \n                t_state <= 3'd1;\n            else \n                t_state <= t_state + 1'b1;\n        end\n    end\n\n    // Control Signal Bitmaps:\n    // ctrl[0]  = pc_oe,     ctrl[1]  = pc_count\n    // ctrl[2]  = mar_load,   ctrl[3]  = ram_oe\n    // ctrl[4]  = ram_we,     ctrl[5]  = ir_load\n    // ctrl[6]  = ir_oe,      ctrl[7]  = acc_load\n    // ctrl[8]  = acc_oe,     ctrl[9]  = regb_load\n    // ctrl[10] = alu_oe,     ctrl[11] = alu_sub\n    // ctrl[12] = out_load,   ctrl[13] = flags_load\n\n    always @(*) begin\n        ctrl = 16'b0;\n        case (t_state) \n            // Fetch cycle\n            3'd1: ctrl[0] = 1'b1; ctrl[2] = 1'b1; // T1: MAR <- PC\n            3'd2: ctrl[1] = 1'b1;                 // T2: PC <- PC + 1\n            3'd3: ctrl[3] = 1'b1; ctrl[5] = 1'b1; // T3: IR <- RAM[MAR]\n            \n            // Execute cycle (Opcode Decodes)\n            default: begin\n                case (opcode)\n                    4'b0000: begin // LDA\n                        if (t_state == 3'd4) begin ctrl[6] = 1'b1; ctrl[2] = 1'b1; end // MAR <- IR[3:0]\n                        if (t_state == 3'd5) begin ctrl[3] = 1'b1; ctrl[7] = 1'b1; end // Acc <- RAM[MAR]\n                    end\n                    4'b0010: begin // ADD\n                        if (t_state == 3'd4) begin ctrl[6] = 1'b1; ctrl[2] = 1'b1; end // MAR <- IR[3:0]\n                        if (t_state == 3'd5) begin ctrl[3] = 1'b1; ctrl[9] = 1'b1; end // Reg B <- RAM[MAR]\n                        if (t_state == 3'd6) begin ctrl[10] = 1'b1; ctrl[7] = 1'b1; ctrl[13] = 1'b1; end // Acc <- Acc + B, Flags Load\n                    end\n                    4'b0011: begin // SUB\n                        if (t_state == 3'd4) begin ctrl[6] = 1'b1; ctrl[2] = 1'b1; end\n                        if (t_state == 3'd5) begin ctrl[3] = 1'b1; ctrl[9] = 1'b1; end\n                        if (t_state == 3'd6) begin ctrl[10] = 1'b1; ctrl[11] = 1'b1; ctrl[7] = 1'b1; ctrl[13] = 1'b1; end // Acc <- Acc - B, sub bit, Flags Load\n                    end\n                    4'b1110: begin // OUT\n                        if (t_state == 3'd4) begin ctrl[8] = 1'b1; ctrl[12] = 1'b1; end // OutReg <- Acc\n                    end\n                    default: ctrl = 16'b0;\n                endcase\n            end\n        endcase\n    end\n\nendmodule`,
+        size: '2.5 KB'
+      }
+    ],
+    codeSnippet: `// Shared tri-state bus interface implementation in Verilog\nassign bus = (pc_oe)   ? pc_out  : \n             (ram_oe)  ? ram_out : \n             (ir_oe)   ? ir_out  : \n             (acc_oe)  ? acc_out : \n             (alu_oe)  ? alu_out : \n             8'bzzzzzzzz;`
   }
 ];
 
