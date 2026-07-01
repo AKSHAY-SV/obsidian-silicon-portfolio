@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { DOWNLOAD_ASSETS } from '../data';
 import { DownloadAsset } from '../types';
-import { Download, FileCode, Layers, FileText, Cpu, Eye, ShieldAlert, CheckCircle, Lock, Key, AlertCircle } from 'lucide-react';
+import { FileCode, Layers, FileText, Cpu, CheckCircle } from 'lucide-react';
+import DownloadButton from './DownloadButton';
 
 export default function DownloadCenter() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [requestedAccessId, setRequestedAccessId] = useState<string | null>(null);
   const [downloadSuccessMessage, setDownloadSuccessMessage] = useState<string | null>(null);
 
   const categories = ['All', 'RTL', 'Netlists', 'Layouts', 'Waveforms', 'Specs'];
@@ -13,22 +13,6 @@ export default function DownloadCenter() {
   const filteredAssets = selectedCategory === 'All'
     ? DOWNLOAD_ASSETS
     : DOWNLOAD_ASSETS.filter(a => a.category === selectedCategory);
-
-  const handleDownloadAction = (asset: DownloadAsset) => {
-    if (asset.status === 'Restricted') {
-      setRequestedAccessId(asset.id);
-      setTimeout(() => {
-        setRequestedAccessId(null);
-        alert(`Access request ticket submitted securely for: ${asset.name}. Signed with SHA-256 root certificate.`);
-      }, 1000);
-      return;
-    }
-
-    setDownloadSuccessMessage(`Starting secure download for ${asset.name}...`);
-    setTimeout(() => {
-      setDownloadSuccessMessage(null);
-    }, 2500);
-  };
 
   const getAssetIcon = (iconName: string) => {
     switch (iconName) {
@@ -119,8 +103,7 @@ export default function DownloadCenter() {
                         VER_{asset.version}
                       </span>
                       <span className={`mt-1 inline-block rounded px-1.5 py-0.5 font-mono text-[8px] font-bold ${
-                        asset.status === 'Verified' ? 'bg-[#10b981]/10 text-[#10b981]' :
-                        asset.status === 'Encrypted' ? 'bg-amber-500/10 text-amber-400' : 'bg-red-500/10 text-red-400'
+                        asset.status === 'Verified' ? 'bg-[#10b981]/10 text-[#10b981]' : 'bg-amber-500/10 text-amber-400'
                       }`}>
                         {asset.status.toUpperCase()}
                       </span>
@@ -140,39 +123,20 @@ export default function DownloadCenter() {
 
                 {/* Footer Action button */}
                 <div className="mt-6 pt-4 border-t border-[rgba(255,255,255,0.05)] flex items-center justify-between gap-4">
-                  {asset.status === 'Restricted' ? (
-                    <div className="flex items-center gap-1.5 font-mono text-[10px] text-red-400">
-                      <Lock className="h-3.5 w-3.5" /> Secure authentication required
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5 font-mono text-[10px] text-[#10b981]">
-                      <CheckCircle className="h-3.5 w-3.5" /> Compiled SHA256 matches
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1.5 font-mono text-[10px] text-[#10b981]">
+                    <CheckCircle className="h-3.5 w-3.5" /> Compiled SHA256 matches
+                  </div>
 
-                  <button
-                    disabled={requestedAccessId === asset.id}
-                    onClick={() => handleDownloadAction(asset)}
-                    className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 font-mono text-xs font-bold uppercase tracking-wider transition-all active:scale-95 ${
-                      asset.status === 'Restricted'
-                        ? 'bg-neutral-800 text-neutral-400 border border-[rgba(255,255,255,0.05)] hover:bg-neutral-700 hover:text-white'
-                        : 'bg-[#a78bfa] text-[#0a0a0a] hover:bg-[#bca5ff]'
-                    }`}
-                  >
-                    {requestedAccessId === asset.id ? (
-                      <>
-                        <Key className="h-3.5 w-3.5 animate-spin" /> requesting...
-                      </>
-                    ) : asset.status === 'Restricted' ? (
-                      <>
-                        Request Credentials <Eye className="h-3.5 w-3.5" />
-                      </>
-                    ) : (
-                      <>
-                        Download Asset <Download className="h-3.5 w-3.5" />
-                      </>
-                    )}
-                  </button>
+                  <DownloadButton
+                    downloadPath={asset.downloadPath}
+                    assetName={asset.name}
+                    onDownloadStarted={() => {
+                      setDownloadSuccessMessage(`Starting secure download for ${asset.name}...`);
+                      setTimeout(() => {
+                        setDownloadSuccessMessage(null);
+                      }, 2500);
+                    }}
+                  />
                 </div>
 
               </div>

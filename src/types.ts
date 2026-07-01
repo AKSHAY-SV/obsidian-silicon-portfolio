@@ -66,6 +66,7 @@ export interface DownloadAsset {
   size: string;
   status: 'Verified' | 'Encrypted' | 'Restricted';
   fileType: string;
+  downloadPath: string;
 }
 
 export type NavTab = 

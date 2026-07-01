@@ -543,7 +543,8 @@ export const DOWNLOAD_ASSETS: DownloadAsset[] = [
     version: '1.2.0',
     size: '142 KB',
     status: 'Verified',
-    fileType: 'SystemVerilog / RTL Source'
+    fileType: 'SystemVerilog / RTL Source',
+    downloadPath: ''
   },
   {
     id: 'axi4-crossbar-test',
@@ -553,7 +554,8 @@ export const DOWNLOAD_ASSETS: DownloadAsset[] = [
     version: '1.0.4',
     size: '890 KB',
     status: 'Verified',
-    fileType: 'RTL Peripheral Design'
+    fileType: 'RTL Peripheral Design',
+    downloadPath: ''
   },
   {
     id: 'rv32im-floorplan-def',
@@ -563,7 +565,8 @@ export const DOWNLOAD_ASSETS: DownloadAsset[] = [
     version: '0.8.1-beta',
     size: '14.2 MB',
     status: 'Verified',
-    fileType: 'Pipeline Architecture Documentation'
+    fileType: 'Pipeline Architecture Documentation',
+    downloadPath: ''
   },
   {
     id: 'l2-cache-gate-netlist',
@@ -573,6 +576,7 @@ export const DOWNLOAD_ASSETS: DownloadAsset[] = [
     version: '2.1.0',
     size: '4.1 MB',
     status: 'Encrypted',
-    fileType: 'Cache RTL & Verification'
+    fileType: 'Cache RTL & Verification',
+    downloadPath: ''
   }
 ];
