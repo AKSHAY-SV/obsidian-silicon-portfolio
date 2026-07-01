@@ -388,7 +388,7 @@ CORE PROJECTS:
         { label: 'Throughput', value: '4.2 TOPS @ 800MHz' },
         { label: 'Clock Speed', value: '1.2 GHz Signoff' }
       ],
-      overview: 'Helios-7 is a prototype ASIC SoC designed to process deep integer operations at the edge with minimum power consumption. Synthesised using a state-of-the-art TSMC 7nm technology library.',
+      overview: 'The RV32IM SoC is a prototype ASIC SoC designed to process deep integer operations at the edge with minimum power consumption. Synthesised using a state-of-the-art TSMC 7nm technology library.',
       architecture: 'Features a quad-core processor cluster connected to a customized 16x16 MAC systolic matrix multiplication array via non-blocking AXI4 network-on-chip rings.',
       challenges: 'High dynamic IR drop across the NPU matrix core during peak MAC execution created severe clock tree timing setup failures.',
       solutions: 'Reconfigured the power distribution network, designing a robust dual-grid mesh in Metal 7 & Metal 8 while doubling local decap cells near matrix multipliers.',
@@ -587,7 +587,7 @@ CORE PROJECTS:
   // --------------------------------------------------------------------------
   const achievementsList = [
     { category: "Processor Architecture", title: "RV32IM Design", desc: "Micro-architected and validated a fully compliant RISC-V processor core from scratch." },
-    { category: "SoC Integration", title: "Helios-7 Synthesis", desc: "Successfully mapped multi-core cluster nets and NPU multipliers onto TSMC 7nm technology libraries." },
+    { category: "SoC Integration", title: "RV32IM SoC Synthesis", desc: "Successfully mapped multi-core cluster nets and accelerators onto TSMC 7nm technology libraries." },
     { category: "RTL Development", title: "Verilog / SV Mastery", desc: "Wrote 45+ clean, synthesizable hardware modules with flawless latch-free logs." },
     { category: "Hardware Verification", title: "99.8% Test Coverage", desc: "Verified system core memory maps using Cocotb Python randomized assertions." },
     { category: "FPGA Implementation", title: "Timing Closure", desc: "Achieved clean constraints clocking at 150MHz on Artix-7 and UltraScale+ FPGA targets." },
@@ -619,7 +619,7 @@ CORE PROJECTS:
     { id: 'proj-rpt', name: 'RV32IM_Core_Design_Report.pdf', desc: 'Detailed 24-page report outlining pipeline, hazard matrix, and Verilator verification tests.', type: 'Technical Report', size: '1.8 MB' },
     { id: 'res-paper', name: 'Power_Mesh_IR_Drop_7nm.pdf', desc: 'Technical white paper investigating dual-grid power distributions in sub-10nm processes.', type: 'Research Paper', size: '1.2 MB' },
     { id: 'arch-doc', name: 'MESI_Coherent_Cache_Spec.pdf', desc: 'Architecture specification including MESI state transition matrices and formal SV assertions.', type: 'Architecture Spec', size: '980 KB' },
-    { id: 'pres-slides', name: 'Helios7_SoC_Tapeout_Slides.pdf', desc: 'Presentation deck from the physical design review highlighting floorplan DEF and clock tree results.', type: 'Slides Deck', size: '3.4 MB' }
+    { id: 'pres-slides', name: 'RV32IM_SoC_Tapeout_Slides.pdf', desc: 'Presentation deck from the physical design review highlighting floorplan DEF and clock tree results.', type: 'Slides Deck', size: '3.4 MB' }
   ];
 
   // --------------------------------------------------------------------------

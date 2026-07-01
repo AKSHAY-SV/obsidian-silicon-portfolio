@@ -7,7 +7,7 @@ const STORAGE_KEY = "silicon_copilot_messages";
 const ANALYTICS_KEY = "silicon_copilot_local_analytics";
 
 export const SUGGESTED_QUESTIONS = [
-  "What is the Helios-7 Edge AI SoC designed by Akshay?",
+  "What is the RV32IM SoC designed by Akshay?",
   "Tell me about the synthesizable RV32IM Processor Core.",
   "Which EDA and FPGA design tools does Akshay use?",
   "What certifications does Akshay hold?",
@@ -179,7 +179,7 @@ export function useCopilot() {
     if (lowerText.includes("rv32im") || lowerText.includes("pipeline") || lowerText.includes("eight-bit") || lowerText.includes("register") || lowerText.includes("lut")) {
       sources.push("Projects (RTL Core)");
     }
-    if (lowerText.includes("helios") || lowerText.includes("soc") || lowerText.includes("7nm") || lowerText.includes("finfet") || lowerText.includes("innovus")) {
+    if (lowerText.includes("rv32im-soc") || lowerText.includes("soc") || lowerText.includes("7nm") || lowerText.includes("finfet") || lowerText.includes("innovus")) {
       sources.push("Projects (ASIC SoC)");
     }
     if (lowerText.includes("cache") || lowerText.includes("mesi") || lowerText.includes("coherency") || lowerText.includes("snoop")) {
@@ -214,8 +214,8 @@ export function useCopilot() {
     const contentLower = content.toLowerCase();
     if (contentLower.includes("rv32im") || contentLower.includes("cpu") || contentLower.includes("processor")) {
       detectedProject = "RV32IM Processor";
-    } else if (contentLower.includes("helios") || contentLower.includes("7nm") || contentLower.includes("soc")) {
-      detectedProject = "Helios-7 SoC";
+    } else if (contentLower.includes("rv32im-soc") || contentLower.includes("7nm") || contentLower.includes("soc")) {
+      detectedProject = "RV32IM SoC";
     } else if (contentLower.includes("axi") || contentLower.includes("crossbar") || contentLower.includes("interconnect")) {
       detectedProject = "AXI4 Interconnect";
     } else if (contentLower.includes("cache") || contentLower.includes("mesi")) {
@@ -379,9 +379,9 @@ export function useCopilot() {
       followUps.push("How was the RV32IM processor core verified?");
       followUps.push("What's the difference between his single core and SoC projects?");
     }
-    if (textLower.includes("helios") || textLower.includes("7nm")) {
-      followUps.push("Tell me more about the physical clock tree synthesis on Helios-7.");
-      followUps.push("What tools did he use to check NPU power IR drop?");
+    if (textLower.includes("rv32im-soc") || textLower.includes("7nm")) {
+      followUps.push("Tell me more about the physical clock tree synthesis on the RV32IM SoC.");
+      followUps.push("What tools did he use to check power IR drop?");
     }
     if (textLower.includes("cache") || textLower.includes("mesi")) {
       followUps.push("How did snoop buffers prevent Cache coherence deadlocks?");

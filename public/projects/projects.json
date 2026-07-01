@@ -40,7 +40,7 @@
     ]
   },
   {
-    "id": "helios-7-soc",
+    "id": "rv32im-soc-processor",
     "name": "RV32IM SoC – 5-Stage Pipelined RISC-V Processor",
     "category": "ASIC",
     "tagline": "5-Stage Pipelined RISC-V Processor System on Chip (7nm FinFET)",

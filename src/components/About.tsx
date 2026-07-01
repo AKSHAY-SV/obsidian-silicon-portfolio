@@ -117,7 +117,7 @@ export default function About() {
               My professional focus resides at the critical junction between **Computer Architecture** and **Physical Implementation**. To me, a beautiful micro-architecture is useless if it cannot be synthesized within optimal power grids, or if clock tree skew degrades maximum frequencies. Conversely, a great layout must serve a clever, non-blocking pipeline.
             </p>
             <p className="text-slate-300 leading-relaxed font-sans text-base">
-              Through my work at Obsidian Architecture, I have tape-out verified complex System-on-Chips (such as the TSMC 7nm Helios-7 SoC), built highly scalable RISC-V compute cores with advanced forwarding metrics, and formally proven complex cache coherence protocols. My mission is to build synthesizable, robust hardware that pushes the physical boundaries of PPA (Power, Performance, and Area).
+              Through my work at Obsidian Architecture, I have tape-out verified complex System-on-Chips (such as the TSMC 7nm RV32IM SoC), built highly scalable RISC-V compute cores with advanced forwarding metrics, and formally proven complex cache coherence protocols. My mission is to build synthesizable, robust hardware that pushes the physical boundaries of PPA (Power, Performance, and Area).
             </p>
           </div>
 

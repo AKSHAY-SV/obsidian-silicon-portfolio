@@ -13,7 +13,7 @@ interface GalleryItem {
 const GALLERY_ITEMS: GalleryItem[] = [
   {
     id: 'gdsii-photomask',
-    title: 'Helios-7 Core GDSII Physical Layout',
+    title: 'RV32IM SoC GDSII Physical Layout',
     category: 'Photomasks',
     image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=800&auto=format&fit=crop',
     desc: 'Streamed layout database showcasing Clock Tree routing lanes surrounding the systolic MAC multipliers blocks. Dark blue traces trace signal interconnect channels on M5/M6 metals, while white grids outline top level power mesh networks.',

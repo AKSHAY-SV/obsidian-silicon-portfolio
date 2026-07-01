@@ -9,9 +9,10 @@ interface CopilotResponse {
 function _generateRawResponse(query: string): CopilotResponse {
   const lowerQuery = query.toLowerCase().trim();
 
-  // 1. HELIOS-7 SOC INTENT
+  // 1. RV32IM SOC INTENT
   if (
-    lowerQuery.includes("helios") ||
+    lowerQuery.includes("rv32im-soc-processor") ||
+    lowerQuery.includes("rv32im-soc") ||
     lowerQuery.includes("soc") ||
     lowerQuery.includes("7nm") ||
     lowerQuery.includes("npu") ||
@@ -20,13 +21,13 @@ function _generateRawResponse(query: string): CopilotResponse {
     return {
       sources: ["Projects (ASIC SoC)", "Core Skills & EDA Tools"],
       followUps: [
-        "Tell me more about the physical clock tree synthesis on Helios-7.",
-        "What tools did he use to check NPU power IR drop?",
+        "Tell me more about the physical clock tree synthesis on the RV32IM SoC.",
+        "What tools did he use to check the power IR drop?",
         "What's the difference between his single core and SoC projects?"
       ],
-      response: `### 🚀 HELIOS-7_SOC: Multi-Core RISC-V Edge AI System-on-Chip (7nm FinFET)
+      response: `### 🚀 RV32IM SoC – 5-Stage Pipelined RISC-V Processor (7nm FinFET)
 
-The **Helios-7 SoC** is Akshay Srikrishnan's flagship mixed-signal silicon architecture. It integrates a cluster of 4 high-efficiency out-of-order RISC-V cores with a dedicated Systolic Array NPU matrix engine, sharing a coherent cache hierarchy and communicating over a high-bandwidth, non-blocking 128-bit AXI4 ring network.
+The **RV32IM SoC – 5-Stage Pipelined RISC-V Processor** is Akshay Srikrishnan's flagship mixed-signal silicon architecture. It integrates high-efficiency 5-stage pipelined RISC-V cores with dedicated accelerators, sharing a coherent cache hierarchy and communicating over a high-bandwidth, non-blocking 128-bit AXI4 ring network.
 
 #### 📊 Core Physical & Silicon Metrics
 | Parameter | Value / Specification |
@@ -36,20 +37,20 @@ The **Helios-7 SoC** is Akshay Srikrishnan's flagship mixed-signal silicon archi
 | **Silicon Area** | 12.54 mm² |
 | **Peak Power Consumption** | 452 mW |
 | **Transistor Count** | 28.4 Million |
-| **NPU Compute Density** | 4.2 TOPS @ 800MHz (INT8 Matrix) |
+| **Compute Density** | 4.2 TOPS @ 800MHz (INT8 Matrix) |
 | **Interconnect Fabric** | 128-bit Non-Blocking Ring Interconnect (AXI4-compliant) |
 | **Memory Interface** | Integrated LPDDR4/5 Physical Layer (PHY) |
 | **L2 SRAM Cache** | Shared 1MB Cache Coherent SRAM |
 
 #### 🛠️ Key Microarchitectural Features
-1. **CPU Cluster**: Quad RV64GCX Dual-Issue Out-of-Order cores. Optimized for low-power control tasks and OS hosting.
-2. **Systolic Array NPU**: An 800MHz 16x16 MAC (Multiply-Accumulate) array with dedicated activation function units (ReLU, GeLU) and low-latency weight double-buffering.
+1. **CPU Cluster**: 5-Stage Pipelined RV32IM cores. Optimized for low-power control tasks and OS hosting.
+2. **Systolic Array Acceleration**: An 800MHz 16x16 MAC (Multiply-Accumulate) array with dedicated activation function units (ReLU, GeLU) and low-latency weight double-buffering.
 3. **Power Management**: Deployed adaptive body biasing and dynamic voltage frequency scaling (DVFS) domains.
 
 #### ⚡ Architectural Challenges & Solutions
 
-*   **Dynamic IR Drop in NPU Matrix Engine**:
-    *   *Problem*: High MAC density during intensive matrix multiplications caused dynamic voltage droop exceeding 12% in the core region, triggering setup timing violations.
+*   **Dynamic IR Drop in Matrix Engine**:
+    *   *Problem*: High MAC density during intensive operations caused dynamic voltage droop exceeding 12% in the core region, triggering setup timing violations.
     *   *Solution*: Re-architected the power grid using a dense dual-mesh layout in Metal 7 (M7) and Metal 8 (M8), doubled the standard cell tap density, and placed decoupling capacitor cells (decaps) directly adjacent to structural multiplier rows.
 *   **Clock Skew Boundary Management**:
     *   *Problem*: Routing clock lines across the 12.54 mm² die boundary resulted in over 180ps of clock skew, leading to hold-time violations.
@@ -363,7 +364,7 @@ Akshay has extensive hands-on experience with industry-standard digital hardware
     return {
       sources: ["Portfolio Knowledge Base"],
       followUps: [
-        "What is the Helios-7 Edge AI SoC designed by Akshay?",
+        "What is the RV32IM SoC designed by Akshay?",
         "Tell me about the synthesizable RV32IM Processor Core.",
         "Which EDA and FPGA design tools does Akshay use?"
       ],
@@ -373,7 +374,7 @@ Welcome to Akshay Srikrishnan's silicon engineering portfolio hub! I am **Silico
 
 #### 🔬 What I Can Do For You:
 *   **Architectural deep dives**: Ask me about the pipeline configuration or hazard forwarding in his synthesizable **RV32IM RISC-V CPU Core**.
-*   **Silicon Layout and P&R**: Inquire about the physical clock tree synthesis or dynamic IR drop resolution on the **7nm FinFET Helios-7 SoC**.
+*   **Silicon Layout and P&R**: Inquire about the physical clock tree synthesis or dynamic IR drop resolution on the **7nm FinFET RV32IM SoC**.
 *   **Coherence & Protocols**: Explore the **L2 Cache Controller** state machine or the **AXI4 Parameterized Crossbar Switch** arbitration rules.
 *   **EDA & Verification Skills**: Ask which Synopsys, Cadence, or Xilinx Vivado design suites Akshay commands.
 
@@ -414,8 +415,8 @@ You can download official technical documents and CV materials written by Akshay
 3.  **MESI Coherent Cache Specification (PDF)**
     *   *Asset*: \`MESI_Coherent_Cache_Spec.pdf\` (~980 KB)
     *   *Scope*: Architecture specifications containing state transition matrices, snoop pending configurations, and formal SystemVerilog Assertions.
-4.  **Helios-7 SoC Tapeout Slide Deck (PDF)**
-    *   *Asset*: \`Helios7_SoC_Tapeout_Slides.pdf\` (~3.4 MB)
+4.  **RV32IM SoC Tapeout Slide Deck (PDF)**
+    *   *Asset*: \`RV32IM_SoC_Tapeout_Slides.pdf\` (~3.4 MB)
     *   *Scope*: Presentation slides illustrating core layout DEF boundaries, global clock tree grids, and Innovus floorplan results.`
     };
   }
@@ -433,7 +434,7 @@ You can download official technical documents and CV materials written by Akshay
     return {
       sources: [`Projects (${matchedProject.name})`],
       followUps: [
-        "What is the Helios-7 Edge AI SoC designed by Akshay?",
+        "What is the RV32IM SoC designed by Akshay?",
         "Tell me about the synthesizable RV32IM Processor Core.",
         "Explain his MESI cache controller and its challenges."
       ],
@@ -467,7 +468,7 @@ ${matchedProject.challenges
     sources: ["Portfolio Knowledge Base"],
     followUps: [
       "Tell me about the synthesizable RV32IM Processor Core.",
-      "What is the Helios-7 Edge AI SoC designed by Akshay?",
+      "What is the RV32IM SoC designed by Akshay?",
       "Which EDA and FPGA design tools does Akshay use?"
     ],
     response: `### 🔎 Information Search Result for "${query}"
@@ -479,7 +480,7 @@ Akshay Srikrishnan's engineering database has registered this request. While the
 *   **Core Hardware Focus**: Synthesizable RISC-V cores (RV32IM), 7nm FinFET mixed-signal SoCs, coherent cash hierarchies, and non-blocking AXI interconnect switches.
 *   **Primary Academic Institution**: Manipal Institute of Technology, Bengaluru, specializing in VLSI Design & Technology.
 
-Feel free to query specific topics such as the **RV32IM processor pipeline**, **Helios-7 SoC area**, **MESI cache states**, or his **Arm certification** to unlock deep SystemVerilog code blocks and physical design metrics!`
+Feel free to query specific topics such as the **RV32IM processor pipeline**, **RV32IM SoC area**, **MESI cache states**, or his **Arm certification** to unlock deep SystemVerilog code blocks and physical design metrics!`
   };
 }
 

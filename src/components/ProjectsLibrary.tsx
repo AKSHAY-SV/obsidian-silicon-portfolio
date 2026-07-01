@@ -61,7 +61,7 @@ export const getProjectMetadata = (id: string): ProjectMeta => {
       quickTags: ['RISC-V', '5-Stage', 'Bypass Matrix'],
       githubUrl: 'https://github.com/google-deepmind/rv32im-processor',
     },
-    'helios-7-soc': {
+    'rv32im-soc-processor': {
       difficulty: 'Advanced',
       status: 'Completed',
       completionDate: '2026-05',
@@ -69,8 +69,8 @@ export const getProjectMetadata = (id: string): ProjectMeta => {
       primaryLanguage: 'Chisel',
       complexityScore: 98,
       domains: ['Computer Architecture', 'RTL Design', 'ASIC Design', 'Physical Design'],
-      quickTags: ['7nm FinFET', 'Edge AI', 'Systolic NPU'],
-      githubUrl: 'https://github.com/google-deepmind/helios-7-soc',
+      quickTags: ['7nm FinFET', 'RISC-V', '5-Stage Pipelined'],
+      githubUrl: 'https://github.com/google-deepmind/rv32im-soc-processor',
     },
     'axi4-interconnect': {
       difficulty: 'Advanced',
@@ -265,7 +265,7 @@ export default function ProjectsLibrary({ projects }: ProjectsLibraryProps = {})
       });
     } else {
       // Featured
-      const featuredOrder = ['helios-7-soc', 'rv32im-core', 'axi4-interconnect', 'l2-cache-controller', 'eight-bit-computer'];
+      const featuredOrder = ['rv32im-soc-processor', 'rv32im-core', 'axi4-interconnect', 'l2-cache-controller', 'eight-bit-computer'];
       return list.sort((a, b) => {
         const idxA = featuredOrder.indexOf(a.id);
         const idxB = featuredOrder.indexOf(b.id);
@@ -1036,7 +1036,7 @@ export default function ProjectsLibrary({ projects }: ProjectsLibraryProps = {})
                     </div>
                   </div>
                 )}
-                {activeProject.id === 'helios-7-soc' && (
+                {activeProject.id === 'rv32im-soc-processor' && (
                   <div className="space-y-4">
                     <div className="border-b border-[rgba(255,255,255,0.06)] pb-4">
                       <span className="font-mono text-xs text-white block font-bold mb-1">// ASIC Physical Backend Synthesis pipeline</span>

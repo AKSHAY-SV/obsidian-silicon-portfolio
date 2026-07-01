@@ -112,8 +112,8 @@ export default function CopilotWindow({ copilotState }: CopilotWindowProps) {
       list.push("Pipeline Hazards & Forwarding on RV32IM");
       list.push("How does the M-extension multiplier optimize integer division?");
     }
-    if (openedProjects.includes("Helios-7 Edge AI SoC") || currentProject.includes("Helios-7")) {
-      list.push("Helios-7 SoC Area & TSMC 7nm Tapeout");
+    if (openedProjects.includes("RV32IM SoC – 5-Stage Pipelined RISC-V Processor") || currentProject.includes("rv32im-soc")) {
+      list.push("RV32IM SoC Area & TSMC 7nm Tapeout");
       list.push("AXI4 Crossbar Interconnect arbitration rules");
     }
     if (visitedPages.includes("research")) {
@@ -125,7 +125,7 @@ export default function CopilotWindow({ copilotState }: CopilotWindowProps) {
     // Default fallback questions to keep interface active
     if (list.length < 3) {
       list.push("Tell me about the synthesizable RV32IM Processor Core.");
-      list.push("What is the Helios-7 Edge AI SoC designed by Akshay?");
+      list.push("What is the RV32IM SoC designed by Akshay?");
       list.push("Which EDA and FPGA design tools does Akshay use?");
     }
     return Array.from(new Set(list)).slice(0, 3);

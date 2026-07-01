@@ -225,7 +225,7 @@ set_max_area 0 # Force minimum logical cell sizing`}
           </div>
         )
       };
-    case 'helios-7-soc':
+    case 'rv32im-soc-processor':
       return {
         ...defaults,
         regMapTitle: "RV32IM SoC Register Mapping Matrix",
@@ -293,12 +293,12 @@ const getNextReadingProject = (currentId: string) => {
   switch (currentId) {
     case 'rv32im-core':
       return {
-        id: 'helios-7-soc',
+        id: 'rv32im-soc-processor',
         name: 'RV32IM SoC – 5-Stage Pipelined RISC-V Processor',
         tagline: '5-Stage Pipelined RISC-V Processor System on Chip (7nm FinFET)',
         desc: 'Read the architectural layout of the TSMC 7nm ASIC co-designed to house multiple custom processing cores.'
       };
-    case 'helios-7-soc':
+    case 'rv32im-soc-processor':
       return {
         id: 'axi4-interconnect',
         name: 'AXI4_CROSSBAR',
@@ -520,7 +520,7 @@ export default function ProjectWorkspace({ project, onClose }: ProjectWorkspaceP
             </div>
           </div>
         );
-      case 'helios-7-soc':
+      case 'rv32im-soc-processor':
         return (
           <div className="space-y-4">
             <div className="border-b border-[rgba(255,255,255,0.06)] pb-4">

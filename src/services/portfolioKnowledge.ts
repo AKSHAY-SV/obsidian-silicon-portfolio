@@ -51,11 +51,11 @@ export const PORTFOLIO_KNOWLEDGE: PortfolioKnowledgeBase = {
       ]
     },
     {
-      id: "helios-7-soc",
-      name: "HELIOS-7_SOC",
+      id: "rv32im-soc-processor",
+      name: "RV32IM SoC – 5-Stage Pipelined RISC-V Processor",
       category: "ASIC",
-      tagline: "Multi-Core RISC-V Edge AI System on Chip (7nm FinFET)",
-      description: "A fully integrated mixed-signal Edge AI SoC combining 4 cluster-coupled high-efficiency RISC-V application processors with a custom Systolic Array NPU Accelerator, sharing an L1/L2 coherence fabric and interfacing via high-speed APB/AXI4 interconnects.",
+      tagline: "5-Stage Pipelined RISC-V Processor System on Chip (7nm FinFET)",
+      description: "A fully integrated mixed-signal 5-stage pipelined RISC-V processor co-designed with high-efficiency accelerators, sharing an L1/L2 coherence fabric and interfacing via high-speed APB/AXI4 interconnects.",
       techStack: ["Chisel", "Verilog", "TSMC 7nm PDK", "Synopsys Design Compiler", "Cadence Innovus"],
       metrics: {
         lutCount: "28.4M Transistors",
@@ -350,11 +350,11 @@ export const PORTFOLIO_KNOWLEDGE: PortfolioKnowledgeBase = {
     { id: "proj-rpt", name: "RV32IM_Core_Design_Report.pdf", type: "Technical Report", size: "1.8 MB", description: "Detailed 24-page report outlining pipeline, hazard matrix, and Verilator verification tests." },
     { id: "res-paper", name: "Power_Mesh_IR_Drop_7nm.pdf", type: "Research Paper", size: "1.2 MB", description: "Technical white paper investigating dual-grid power distributions in sub-10nm processes." },
     { id: "arch-doc", name: "MESI_Coherent_Cache_Spec.pdf", type: "Architecture Spec", size: "980 KB", description: "Architecture specification including MESI state transition matrices and formal SV assertions." },
-    { id: "pres-slides", name: "Helios7_SoC_Tapeout_Slides.pdf", type: "Slides Deck", size: "3.4 MB", description: "Presentation deck from the physical design review highlighting floorplan DEF and clock tree results." }
+    { id: "pres-slides", name: "RV32IM_SoC_Tapeout_Slides.pdf", type: "Slides Deck", size: "3.4 MB", description: "Presentation deck from the physical design review highlighting floorplan DEF and clock tree results." }
   ],
   achievements: [
     { category: "Processor Architecture", title: "RV32IM Design", desc: "Micro-architected and validated a fully compliant RISC-V processor core from scratch." },
-    { category: "SoC Integration", title: "Helios-7 Synthesis", desc: "Successfully mapped multi-core cluster nets and NPU multipliers onto TSMC 7nm technology libraries." },
+    { category: "SoC Integration", title: "RV32IM SoC Synthesis", desc: "Successfully mapped 5-stage pipelined processor core nets and multipliers onto TSMC 7nm technology libraries." },
     { category: "RTL Development", title: "Verilog / SV Mastery", desc: "Wrote 45+ clean, synthesizable hardware modules with flawless latch-free logs." },
     { category: "Hardware Verification", title: "99.8% Test Coverage", desc: "Verified system core memory maps using Cocotb Python randomized assertions." },
     { category: "FPGA Implementation", title: "Timing Closure", desc: "Achieved clean constraints clocking at 150MHz on Artix-7 and UltraScale+ FPGA targets." },

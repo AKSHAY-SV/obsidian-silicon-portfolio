@@ -192,7 +192,7 @@ export function SoCDiagram() {
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
           <Network className="h-3.5 w-3.5 text-purple-400" />
-          Helios-7 Edge AI SoC Network
+          RV32IM SoC Network
         </span>
         <button
           onClick={() => setModalOpen(true)}

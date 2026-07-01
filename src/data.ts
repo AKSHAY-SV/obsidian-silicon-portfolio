@@ -146,7 +146,7 @@ always @(*) begin
 end`
   },
   {
-    id: 'helios-7-soc',
+    id: 'rv32im-soc-processor',
     name: 'RV32IM SoC – 5-Stage Pipelined RISC-V Processor',
     category: 'ASIC',
     tagline: '5-Stage Pipelined RISC-V Processor System on Chip (7nm FinFET)',
@@ -556,8 +556,8 @@ export const DOWNLOAD_ASSETS: DownloadAsset[] = [
     fileType: 'UVM / SV Testbench'
   },
   {
-    id: 'helios-floorplan-def',
-    name: 'Helios7_Core_Layout_v0.8.def',
+    id: 'rv32im-floorplan-def',
+    name: 'RV32IM_Core_Layout_v0.8.def',
     category: 'Layouts',
     icon: 'layers',
     version: '0.8.1-beta',
