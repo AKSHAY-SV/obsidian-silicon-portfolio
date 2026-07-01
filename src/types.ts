@@ -72,9 +72,6 @@ export type NavTab =
   | 'home' 
   | 'about' 
   | 'projects' 
-  | 'research' 
-  | 'blog' 
-  | 'gallery' 
   | 'downloads' 
   | 'resume' 
   | 'contact';

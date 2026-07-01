@@ -90,7 +90,7 @@ export const getProjectMetadata = (id: string): ProjectMeta => {
       completionDisplay: 'Nov 2025',
       primaryLanguage: 'SystemVerilog',
       complexityScore: 85,
-      domains: ['Computer Architecture', 'RTL Design', 'Research', 'Verification'],
+      domains: ['Computer Architecture', 'RTL Design', 'Verification'],
       quickTags: ['MESI Coherence', 'Pseudo-LRU', 'Snoop Buffer'],
       githubUrl: 'https://github.com/google-deepmind/l2-cache-system',
     },
@@ -127,7 +127,6 @@ const DOMAINS = [
   'Physical Design',
   'FPGA',
   'Embedded Systems',
-  'Research',
   'Verification'
 ];
 
@@ -188,7 +187,7 @@ export default function ProjectsLibrary({ projects }: ProjectsLibraryProps = {})
 
   // Advanced Filtering States
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState('All'); // All, RTL, ASIC, FPGA, Embedded, Research, Completed, In Progress
+  const [activeFilter, setActiveFilter] = useState('All'); // All, RTL, ASIC, FPGA, Embedded, Completed, In Progress
   const [sortBy, setSortBy] = useState<'Newest' | 'Most Complex' | 'Featured'>('Featured');
 
   // Collapsible state for domains
@@ -199,7 +198,6 @@ export default function ProjectsLibrary({ projects }: ProjectsLibraryProps = {})
     'Physical Design': false,
     'FPGA': false,
     'Embedded Systems': false,
-    'Research': false,
     'Verification': false,
   });
 
@@ -224,7 +222,6 @@ export default function ProjectsLibrary({ projects }: ProjectsLibraryProps = {})
     'ASIC',
     'FPGA',
     'Embedded',
-    'Research',
     'Completed',
     'In Progress'
   ];
@@ -287,8 +284,6 @@ export default function ProjectsLibrary({ projects }: ProjectsLibraryProps = {})
         if (!meta.domains.includes('FPGA')) return false;
       } else if (activeFilter === 'Embedded') {
         if (!meta.domains.includes('Embedded Systems')) return false;
-      } else if (activeFilter === 'Research') {
-        if (!meta.domains.includes('Research')) return false;
       } else if (activeFilter === 'Completed') {
         if (meta.status !== 'Completed') return false;
       } else if (activeFilter === 'In Progress') {

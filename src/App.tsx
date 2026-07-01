@@ -8,9 +8,6 @@ import ProjectsLibrary from './components/ProjectsLibrary';
 import DownloadCenter from './components/DownloadCenter';
 
 import About from './components/About';
-import Research from './components/Research';
-import Blog from './components/Blog';
-import Gallery from './components/Gallery';
 import Resume from './components/Resume';
 import Contact from './components/Contact';
 import SiliconCopilot from './components/copilot/SiliconCopilot';
@@ -304,7 +301,7 @@ Tapeouts: RV32IM SoC – 5-Stage Pipelined RISC-V Processor (TSMC 7nm), L2 MESI 
                   
                   {/* Paper 1 */}
                   <div 
-                    onClick={() => setActiveTab('research')}
+                    onClick={() => setActiveTab('downloads')}
                     className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[#121212] p-6 flex flex-col justify-between hover:border-[#a78bfa]/40 cursor-pointer hover:bg-[#151515] transition-all"
                   >
                     <div>
@@ -328,7 +325,7 @@ Tapeouts: RV32IM SoC – 5-Stage Pipelined RISC-V Processor (TSMC 7nm), L2 MESI 
 
                   {/* Paper 2 */}
                   <div 
-                    onClick={() => setActiveTab('research')}
+                    onClick={() => setActiveTab('downloads')}
                     className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[#121212] p-6 flex flex-col justify-between hover:border-[#a78bfa]/40 cursor-pointer hover:bg-[#151515] transition-all"
                   >
                     <div>
@@ -352,7 +349,7 @@ Tapeouts: RV32IM SoC – 5-Stage Pipelined RISC-V Processor (TSMC 7nm), L2 MESI 
 
                   {/* Paper 3 */}
                   <div 
-                    onClick={() => setActiveTab('research')}
+                    onClick={() => setActiveTab('downloads')}
                     className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[#121212] p-6 flex flex-col justify-between hover:border-[#a78bfa]/40 cursor-pointer hover:bg-[#151515] transition-all"
                   >
                     <div>
@@ -454,15 +451,6 @@ Tapeouts: RV32IM SoC – 5-Stage Pipelined RISC-V Processor (TSMC 7nm), L2 MESI 
 
         {/* PROJECTS LIBRARY VIEW */}
         {activeTab === 'projects' && <ProjectsLibrary projects={projects} />}
-
-        {/* RESEARCH VIEW */}
-        {activeTab === 'research' && <Research />}
-
-        {/* BLOG VIEW */}
-        {activeTab === 'blog' && <Blog />}
-
-        {/* GALLERY VIEW */}
-        {activeTab === 'gallery' && <Gallery />}
 
         {/* DOWNLOAD CENTER VIEW */}
         {activeTab === 'downloads' && <DownloadCenter />}

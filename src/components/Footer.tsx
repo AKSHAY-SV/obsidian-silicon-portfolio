@@ -57,24 +57,6 @@ export default function Footer({ setActiveTab, onSystemStatusOpen }: FooterProps
                 Projects
               </button>
               <button
-                onClick={() => setActiveTab('research')}
-                className="text-left font-sans text-sm text-[#94a3b8] hover:text-white transition-colors"
-              >
-                Research
-              </button>
-              <button
-                onClick={() => setActiveTab('blog')}
-                className="text-left font-sans text-sm text-[#94a3b8] hover:text-white transition-colors"
-              >
-                Blog Deep Dives
-              </button>
-              <button
-                onClick={() => setActiveTab('gallery')}
-                className="text-left font-sans text-sm text-[#94a3b8] hover:text-white transition-colors"
-              >
-                Silicon Gallery
-              </button>
-              <button
                 onClick={() => setActiveTab('downloads')}
                 className="text-left font-sans text-sm text-[#94a3b8] hover:text-white transition-colors"
               >

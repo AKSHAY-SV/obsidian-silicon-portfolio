@@ -537,52 +537,42 @@ export const COMMITS: CommitLog[] = [
 export const DOWNLOAD_ASSETS: DownloadAsset[] = [
   {
     id: 'rv32im-rtl-src',
-    name: 'RV32IM_Core_RTL_v1.2.tar.gz',
+    name: 'SoC with Custom RISC-V Processor',
     category: 'RTL',
     icon: 'code',
     version: '1.2.0',
     size: '142 KB',
     status: 'Verified',
-    fileType: 'SystemVerilog Source'
+    fileType: 'SystemVerilog / RTL Source'
   },
   {
     id: 'axi4-crossbar-test',
-    name: 'AXI4_Crossbar_UVM_Testbench.zip',
+    name: 'APB Compliant UART Peripheral with Integrated FSM',
     category: 'Verification',
     icon: 'waveform',
     version: '1.0.4',
     size: '890 KB',
     status: 'Verified',
-    fileType: 'UVM / SV Testbench'
+    fileType: 'RTL Peripheral Design'
   },
   {
     id: 'rv32im-floorplan-def',
-    name: 'RV32IM_Core_Layout_v0.8.def',
+    name: 'RV32IM 5-Stage Pipeline',
     category: 'Layouts',
     icon: 'layers',
     version: '0.8.1-beta',
     size: '14.2 MB',
-    status: 'Restricted',
-    fileType: 'ASIC Floorplan DEF'
+    status: 'Verified',
+    fileType: 'Pipeline Architecture Documentation'
   },
   {
     id: 'l2-cache-gate-netlist',
-    name: 'L2_Coherent_Cache_Netlist.v',
+    name: 'Cache Memory',
     category: 'Netlists',
     icon: 'cpu',
     version: '2.1.0',
     size: '4.1 MB',
     status: 'Encrypted',
-    fileType: 'Gate-Level Netlist (TSMC 65nm)'
-  },
-  {
-    id: 'rv32im-instruction-set-doc',
-    name: 'RV32IM_Hardware_Reference_Manual.pdf',
-    category: 'Specs',
-    icon: 'file-text',
-    version: '1.5.0',
-    size: '2.4 MB',
-    status: 'Verified',
-    fileType: 'Architecture Specification'
+    fileType: 'Cache RTL & Verification'
   }
 ];
