@@ -569,13 +569,24 @@ export const DOWNLOAD_ASSETS: DownloadAsset[] = [
     downloadPath: ''
   },
   {
+    id: '8-bit-cpu',
+    name: '8 Bit CPU',
+    category: 'Layouts',
+    icon: 'layers',
+    version: '0.8.1-beta',
+    size: '14.2 MB',
+    status: 'Verified',
+    fileType: 'Pipeline Architecture Documentation',
+    downloadPath: ''
+  },
+  {
     id: 'l2-cache-gate-netlist',
     name: 'Cache Memory',
     category: 'Netlists',
     icon: 'cpu',
     version: '2.1.0',
     size: '4.1 MB',
-    status: 'Encrypted',
+    status: 'Verified',
     fileType: 'Cache RTL & Verification',
     downloadPath: ''
   }
