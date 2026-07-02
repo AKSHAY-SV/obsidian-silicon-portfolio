@@ -31,7 +31,20 @@ export default function AdminLogin({ onLoginSuccess, onReturn }: AdminLoginProps
     setIsSubmitting(true);
 
     try {
-      await signInWithEmailAndPassword(auth, trimmedEmail, trimmedPassword);
+      const userCredential = await signInWithEmailAndPassword(auth, trimmedEmail, trimmedPassword);
+      const user = userCredential.user;
+      
+      // Configure administrator email check
+      const adminEmail = 'crazyplayz61@gmail.com';
+      
+      if (!user.email || user.email.toLowerCase() !== adminEmail.toLowerCase()) {
+        const { signOut } = await import('firebase/auth');
+        await signOut(auth);
+        setError('Unauthorized administrator.');
+        setIsSubmitting(false);
+        return;
+      }
+
       onLoginSuccess();
     } catch (err) {
       console.error('[Admin Login Error]', err);

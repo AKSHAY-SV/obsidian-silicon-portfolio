@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from '../firebase/firebase';
 import { AccessRequest } from '../types/accessRequest';
+import { DOWNLOAD_ASSETS } from '../data';
 import { 
   Search, 
   Filter, 
@@ -30,7 +31,8 @@ import {
   Mail,
   FileText,
   HelpCircle,
-  Sparkles
+  Sparkles,
+  RefreshCw
 } from 'lucide-react';
 
 // Required error handling formats for Firestore Operations per integration rules
@@ -87,6 +89,44 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Active Admin View Tab
+  const [activeTab, setActiveTab] = useState<'requests' | 'downloads'>('requests');
+
+  // Secure Download Analytics & Logging States
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [isAnalyticsLoading, setIsAnalyticsLoading] = useState<boolean>(false);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+
+  const fetchAnalytics = async () => {
+    setIsAnalyticsLoading(true);
+    setAnalyticsError(null);
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) throw new Error('Unauthenticated admin session.');
+      const res = await fetch('/api/downloads/analytics', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to fetch download analytics');
+      }
+      setAnalyticsData(data);
+    } catch (err: any) {
+      console.error(err);
+      setAnalyticsError(err.message || 'Failed to load secure database stats');
+    } finally {
+      setIsAnalyticsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'downloads') {
+      fetchAnalytics();
+    }
+  }, [activeTab]);
+
   // Filter and Search States
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
@@ -98,52 +138,83 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
   // Update Tracking State for Buttons (Disable & Loader)
   const [updatingRequests, setUpdatingRequests] = useState<Record<string, 'approving' | 'rejecting'>>({});
   
+  // Track checked projects per request ID (defaults to all)
+  const [selectedProjectsForRequest, setSelectedProjectsForRequest] = useState<Record<string, string[]>>({});
+
   // Track notification email states
   const [emailStatuses, setEmailStatuses] = useState<Record<string, {
     status: 'idle' | 'sending' | 'success' | 'failed';
     error?: string;
   }>>({});
 
-  const sendAutomaticEmail = async (id: string, type: 'approve' | 'reject', name: string, email: string) => {
-    if (!email) return;
-    setEmailStatuses(prev => ({
-      ...prev,
-      [id]: { status: 'sending' }
-    }));
+  const handleRequestAction = async (id: string, action: 'approve' | 'reject', allowedProjects?: string[]) => {
+    setUpdatingRequests(prev => ({ ...prev, [id]: action === 'approve' ? 'approving' : 'rejecting' }));
+    setEmailStatuses(prev => ({ ...prev, [id]: { status: 'sending' } }));
 
     try {
-      const downloadPortalLink = `${window.location.origin}/downloads`;
-      const response = await fetch('/api/send-email', {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) {
+        throw new Error('User is not authenticated.');
+      }
+
+      const response = await fetch('/api/admin/request-action', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          type,
-          name,
-          email,
-          downloadPortalLink
+          requestId: id,
+          action,
+          allowedProjects
         })
       });
 
-      const data = await response.json();
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Failed to send email API response');
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded. Please wait before retrying.');
       }
 
-      setEmailStatuses(prev => ({
-        ...prev,
-        [id]: { status: 'success' }
-      }));
-      addToast(`Automatic ${type} notification email sent to ${email}`);
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to complete action on request');
+      }
+
+      if (data.emailSent === false) {
+        setEmailStatuses(prev => ({
+          ...prev,
+          [id]: { status: 'failed', error: 'Email delivery failed' }
+        }));
+        addToast('Request updated. Email delivery failed.', 'error');
+      } else {
+        setEmailStatuses(prev => ({
+          ...prev,
+          [id]: { status: 'success' }
+        }));
+        addToast(`Request ${action === 'approve' ? 'approved' : 'rejected'} successfully.`);
+      }
     } catch (err: any) {
-      console.error('Email send error:', err);
+      console.error('Request action error:', err);
       setEmailStatuses(prev => ({
         ...prev,
-        [id]: { status: 'failed', error: err.message || 'Network error' }
+        [id]: { status: 'failed', error: err.message || 'Action failed' }
       }));
-      addToast(`Email failed to send. Retry?`, 'error');
+      addToast(err.message || 'Action failed: Server error or unauthorized.', 'error');
+    } finally {
+      setUpdatingRequests(prev => {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      });
     }
+  };
+
+  const handleApprove = async (id: string) => {
+    const allowed = selectedProjectsForRequest[id] ?? DOWNLOAD_ASSETS.map(a => a.id);
+    await handleRequestAction(id, 'approve', allowed);
+  };
+
+  const handleReject = async (id: string) => {
+    await handleRequestAction(id, 'reject');
   };
   
   // Custom Premium Toast System
@@ -192,83 +263,6 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
 
     return () => unsubscribe();
   }, []);
-
-  // Update Status Handlers
-  const handleApprove = async (id: string) => {
-    const docPath = `portfolio_access_requests/${id}`;
-    const docRef = doc(db, 'portfolio_access_requests', id);
-    setUpdatingRequests(prev => ({ ...prev, [id]: 'approving' }));
-    
-    const reqData = requests.find(r => r.id === id);
-    const name = reqData?.name || 'Researcher';
-    const email = reqData?.email || '';
-
-    try {
-      const adminEmail = auth.currentUser?.email || 'authenticated-admin';
-      await updateDoc(docRef, {
-        status: 'approved',
-        approvedAt: serverTimestamp(),
-        approvedBy: adminEmail,
-        rejectedAt: null,
-        rejectedBy: null
-      });
-      addToast(`Request approved successfully by ${adminEmail}`);
-      
-      if (email) {
-        sendAutomaticEmail(id, 'approve', name, email);
-      }
-    } catch (err) {
-      try {
-        handleFirestoreError(err, OperationType.APPROVE, docPath);
-      } catch (wrappedErr: any) {
-        addToast('Action failed: Permission denied or database mismatch.', 'error');
-      }
-    } finally {
-      setUpdatingRequests(prev => {
-        const copy = { ...prev };
-        delete copy[id];
-        return copy;
-      });
-    }
-  };
-
-  const handleReject = async (id: string) => {
-    const docPath = `portfolio_access_requests/${id}`;
-    const docRef = doc(db, 'portfolio_access_requests', id);
-    setUpdatingRequests(prev => ({ ...prev, [id]: 'rejecting' }));
-    
-    const reqData = requests.find(r => r.id === id);
-    const name = reqData?.name || 'Researcher';
-    const email = reqData?.email || '';
-
-    try {
-      const adminEmail = auth.currentUser?.email || 'authenticated-admin';
-      await updateDoc(docRef, {
-        status: 'rejected',
-        rejectedAt: serverTimestamp(),
-        rejectedBy: adminEmail,
-        approvedAt: null,
-        approvedBy: null
-      });
-      addToast(`Request rejected successfully by ${adminEmail}`);
-      
-      if (email) {
-        sendAutomaticEmail(id, 'reject', name, email);
-      }
-    } catch (err) {
-      try {
-        handleFirestoreError(err, OperationType.REJECT, docPath);
-      } catch (wrappedErr: any) {
-        addToast('Action failed: Permission denied or database mismatch.', 'error');
-      }
-    } finally {
-      setUpdatingRequests(prev => {
-        const copy = { ...prev };
-        delete copy[id];
-        return copy;
-      });
-    }
-  };
 
   // Date Formatting Helper
   const formatDate = (timestamp: any) => {
@@ -391,6 +385,32 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
         </div>
       </div>
 
+      {/* VIEW SELECTOR TABS */}
+      <div className="flex border-b border-white/[0.04] gap-2">
+        <button
+          onClick={() => setActiveTab('requests')}
+          className={`px-5 py-3 font-mono text-[10px] uppercase font-black tracking-wider transition-all border-b-2 cursor-pointer flex items-center gap-1.5 ${
+            activeTab === 'requests'
+              ? 'border-[#a78bfa] text-[#a78bfa] bg-[#a78bfa]/5'
+              : 'border-transparent text-slate-500 hover:text-slate-300'
+          }`}
+        >
+          <Shield className="h-3.5 w-3.5" />
+          Access Requests
+        </button>
+        <button
+          onClick={() => setActiveTab('downloads')}
+          className={`px-5 py-3 font-mono text-[10px] uppercase font-black tracking-wider transition-all border-b-2 cursor-pointer flex items-center gap-1.5 ${
+            activeTab === 'downloads'
+              ? 'border-[#a78bfa] text-[#a78bfa] bg-[#a78bfa]/5'
+              : 'border-transparent text-slate-500 hover:text-slate-300'
+          }`}
+        >
+          <Cpu className="h-3.5 w-3.5" />
+          Secure Downloads Audit Log
+        </button>
+      </div>
+
       {error && (
         <div className="p-4 border border-red-500/20 bg-red-500/5 text-red-400 rounded-xl text-xs font-sans flex items-center gap-3">
           <XCircle className="h-5 w-5 shrink-0 text-red-500" />
@@ -398,7 +418,9 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
         </div>
       )}
 
-      {/* STATISTIC CARDS */}
+      {activeTab === 'requests' ? (
+        <>
+          {/* STATISTIC CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="admin-statistics-grid">
         
         {/* Card 1: Pending (Orange) */}
@@ -691,9 +713,37 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
 
                         {/* Actions buttons */}
                         <td className="p-4 pr-6 text-right">
-                          <div className="flex items-center justify-end gap-2.5">
-                            {isPending ? (
-                              <>
+                          {isPending ? (
+                            <div className="flex flex-col items-end gap-2 text-right">
+                              {/* Checkbox Group for Permissions */}
+                              <div className="flex flex-col gap-1.5 text-left bg-black/40 border border-white/5 p-2 rounded-lg w-56 mb-1">
+                                <span className="font-mono text-[9px] uppercase tracking-wider text-[#a78bfa] font-black">
+                                  ☑ Project Permissions
+                                </span>
+                                <div className="space-y-1">
+                                  {DOWNLOAD_ASSETS.map((asset) => {
+                                    const isChecked = selectedProjectsForRequest[req.id || '']?.includes(asset.id) ?? true;
+                                    return (
+                                      <label key={asset.id} className="flex items-center gap-1.5 text-[9px] font-sans text-slate-300 hover:text-white cursor-pointer select-none">
+                                        <input
+                                          type="checkbox"
+                                          checked={isChecked}
+                                          onChange={(e) => {
+                                            const current = selectedProjectsForRequest[req.id || ''] ?? DOWNLOAD_ASSETS.map(a => a.id);
+                                            const next = e.target.checked
+                                              ? [...current, asset.id]
+                                              : current.filter(id => id !== asset.id);
+                                            setSelectedProjectsForRequest(prev => ({ ...prev, [req.id || '']: next }));
+                                          }}
+                                          className="rounded border-slate-700 bg-slate-900 text-[#a78bfa] focus:ring-[#a78bfa]/50 h-3 w-3"
+                                        />
+                                        <span className="truncate">{asset.name}</span>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
                                 <button
                                   disabled={updatingRequests[req.id || ''] !== undefined}
                                   onClick={() => req.id && handleApprove(req.id)}
@@ -718,12 +768,15 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
                                     <X className="h-3 w-3 stroke-[2.5]" />
                                   )} Reject
                                 </button>
-                              </>
-                            ) : req.status === 'approved' ? (
-                              <div className="text-right">
-                                <div className="inline-flex items-center gap-1 text-[10px] font-mono uppercase text-emerald-400 font-black tracking-wider bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded-full select-none mb-1">
-                                  ✓ Approved
-                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-end gap-2.5">
+                              {req.status === 'approved' ? (
+                                <div className="text-right">
+                                  <div className="inline-flex items-center gap-1 text-[10px] font-mono uppercase text-emerald-400 font-black tracking-wider bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded-full select-none mb-1">
+                                    ✓ Approved
+                                  </div>
                                 <div className="text-[10px] text-slate-400 truncate max-w-[180px] font-medium" title={req.approvedBy || 'Unknown'}>
                                   by {req.approvedBy || 'Admin'}
                                 </div>
@@ -742,11 +795,11 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
                                 )}
                                 {emailStatuses[req.id || '']?.status === 'failed' && (
                                   <div className="mt-1 flex flex-col items-end gap-1">
-                                    <span className="text-[9px] text-red-400 font-mono">
-                                      Email failed to send
+                                    <span className="text-[9px] text-red-400 font-mono text-right leading-tight">
+                                      Request updated.<br />Email delivery failed.
                                     </span>
                                     <button
-                                      onClick={() => req.id && sendAutomaticEmail(req.id, 'approve', req.name, req.email)}
+                                      onClick={() => req.id && handleApprove(req.id)}
                                       className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 font-mono text-[9px] uppercase font-bold tracking-wider transition-all cursor-pointer"
                                     >
                                       Retry?
@@ -777,11 +830,11 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
                                 )}
                                 {emailStatuses[req.id || '']?.status === 'failed' && (
                                   <div className="mt-1 flex flex-col items-end gap-1">
-                                    <span className="text-[9px] text-red-400 font-mono">
-                                      Email failed to send
+                                    <span className="text-[9px] text-red-400 font-mono text-right leading-tight">
+                                      Request updated.<br />Email delivery failed.
                                     </span>
                                     <button
-                                      onClick={() => req.id && sendAutomaticEmail(req.id, 'reject', req.name, req.email)}
+                                      onClick={() => req.id && handleReject(req.id)}
                                       className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 font-mono text-[9px] uppercase font-bold tracking-wider transition-all cursor-pointer"
                                     >
                                       Retry?
@@ -791,6 +844,7 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
                               </div>
                             )}
                           </div>
+                        )}
                         </td>
                       </tr>
                     );
@@ -860,23 +914,52 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
 
                     {/* Actions panel */}
                     {isPending ? (
-                      <div className="grid grid-cols-2 gap-2.5 pt-2">
-                        <button
-                          disabled={updatingRequests[req.id || ''] !== undefined}
-                          onClick={() => req.id && handleApprove(req.id)}
-                          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-mono uppercase font-black tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-black hover:border-emerald-400 transition-all disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
-                        >
-                          {updatingRequests[req.id || ''] === 'approving' ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <Check className="h-3.5 w-3.5 stroke-[2.5]" />
-                          )} Approve
-                        </button>
-                        <button
-                          disabled={updatingRequests[req.id || ''] !== undefined}
-                          onClick={() => req.id && handleReject(req.id)}
-                          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-mono uppercase font-black tracking-wider bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-black hover:border-red-400 transition-all disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
-                        >
+                      <div className="pt-3 mt-3 border-t border-[rgba(255,255,255,0.04)] space-y-3">
+                        {/* Checkbox Group for Permissions */}
+                        <div className="flex flex-col gap-1.5 text-left bg-black/40 border border-white/5 p-3 rounded-lg w-full">
+                          <span className="font-mono text-[9px] uppercase tracking-wider text-[#a78bfa] font-black">
+                            ☑ Project Permissions
+                          </span>
+                          <div className="space-y-1.5">
+                            {DOWNLOAD_ASSETS.map((asset) => {
+                              const isChecked = selectedProjectsForRequest[req.id || '']?.includes(asset.id) ?? true;
+                              return (
+                                <label key={asset.id} className="flex items-center gap-1.5 text-xs font-sans text-slate-300 hover:text-white cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={(e) => {
+                                      const current = selectedProjectsForRequest[req.id || ''] ?? DOWNLOAD_ASSETS.map(a => a.id);
+                                      const next = e.target.checked
+                                        ? [...current, asset.id]
+                                        : current.filter(id => id !== asset.id);
+                                      setSelectedProjectsForRequest(prev => ({ ...prev, [req.id || '']: next }));
+                                    }}
+                                    className="rounded border-slate-700 bg-slate-900 text-[#a78bfa] focus:ring-[#a78bfa]/50 h-3.5 w-3.5"
+                                  />
+                                  <span className="truncate">{asset.name}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2.5">
+                          <button
+                            disabled={updatingRequests[req.id || ''] !== undefined}
+                            onClick={() => req.id && handleApprove(req.id)}
+                            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-mono uppercase font-black tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-black hover:border-emerald-400 transition-all disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
+                          >
+                            {updatingRequests[req.id || ''] === 'approving' ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Check className="h-3.5 w-3.5 stroke-[2.5]" />
+                            )} Approve
+                          </button>
+                          <button
+                            disabled={updatingRequests[req.id || ''] !== undefined}
+                            onClick={() => req.id && handleReject(req.id)}
+                            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-mono uppercase font-black tracking-wider bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-black hover:border-red-400 transition-all disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
+                          >
                           {updatingRequests[req.id || ''] === 'rejecting' ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
                           ) : (
@@ -884,6 +967,7 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
                           )} Reject
                         </button>
                       </div>
+                    </div>
                     ) : req.status === 'approved' ? (
                       <>
                         <div className="border-t border-[rgba(255,255,255,0.04)] pt-3 mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 text-xs text-slate-400 font-sans">
@@ -910,12 +994,12 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
                                 </span>
                               )}
                               {emailStatuses[req.id].status === 'failed' && (
-                                <div className="flex items-center gap-2">
-                                  <span className="font-mono text-red-400">
-                                    ⚠ Failed
+                                <div className="flex flex-col items-end gap-1">
+                                  <span className="font-mono text-red-400 text-[10px] text-right leading-tight">
+                                    Request updated.<br />Email delivery failed.
                                   </span>
                                   <button
-                                    onClick={() => req.id && sendAutomaticEmail(req.id, 'approve', req.name, req.email)}
+                                    onClick={() => req.id && handleApprove(req.id)}
                                     className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 font-mono text-[9px] uppercase font-bold tracking-wider cursor-pointer"
                                   >
                                     Retry?
@@ -952,12 +1036,12 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
                                 </span>
                               )}
                               {emailStatuses[req.id].status === 'failed' && (
-                                <div className="flex items-center gap-2">
-                                  <span className="font-mono text-red-400">
-                                    ⚠ Failed
+                                <div className="flex flex-col items-end gap-1">
+                                  <span className="font-mono text-red-400 text-[10px] text-right leading-tight">
+                                    Request updated.<br />Email delivery failed.
                                   </span>
                                   <button
-                                    onClick={() => req.id && sendAutomaticEmail(req.id, 'reject', req.name, req.email)}
+                                    onClick={() => req.id && handleReject(req.id)}
                                     className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 font-mono text-[9px] uppercase font-bold tracking-wider cursor-pointer"
                                   >
                                     Retry?
@@ -976,6 +1060,145 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
           </>
         )}
       </div>
+        </>
+      ) : (
+        <div className="space-y-8 animate-fade-in">
+          {/* DOWNLOADS STATISTIC CARDS */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#121214] p-5 flex items-center justify-between relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-purple-500" />
+              <div className="space-y-1">
+                <p className="font-sans text-[11px] uppercase font-bold tracking-wider text-slate-400">Total Downloads</p>
+                <h3 className="font-mono text-3xl font-black text-purple-400 tracking-tight">
+                  {isAnalyticsLoading ? '...' : analyticsData?.metrics?.totalDownloads ?? 0}
+                </h3>
+              </div>
+              <div className="h-10 w-10 rounded-lg border border-purple-500/10 bg-purple-500/5 flex items-center justify-center text-purple-400">
+                <Cpu className="h-5 w-5" />
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#121214] p-5 flex items-center justify-between relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-500" />
+              <div className="space-y-1">
+                <p className="font-sans text-[11px] uppercase font-bold tracking-wider text-slate-400">Downloads Today</p>
+                <h3 className="font-mono text-3xl font-black text-emerald-400 tracking-tight">
+                  {isAnalyticsLoading ? '...' : analyticsData?.metrics?.downloadsToday ?? 0}
+                </h3>
+              </div>
+              <div className="h-10 w-10 rounded-lg border border-emerald-500/10 bg-emerald-500/5 flex items-center justify-center text-emerald-400">
+                <Check className="h-5 w-5" />
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#121214] p-5 flex items-center justify-between relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500" />
+              <div className="space-y-1 max-w-[70%]">
+                <p className="font-sans text-[11px] uppercase font-bold tracking-wider text-slate-400">Most Active University</p>
+                <h3 className="font-mono text-xs font-bold text-blue-400 truncate mt-1" title={analyticsData?.metrics?.mostActiveUniversity}>
+                  {isAnalyticsLoading ? '...' : analyticsData?.metrics?.mostActiveUniversity ?? '—'}
+                </h3>
+              </div>
+              <div className="h-10 w-10 rounded-lg border border-blue-500/10 bg-blue-500/5 flex items-center justify-center text-blue-400 shrink-0">
+                <Building className="h-5 w-5" />
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#121214] p-5 flex items-center justify-between relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-amber-500" />
+              <div className="space-y-1 max-w-[70%]">
+                <p className="font-sans text-[11px] uppercase font-bold tracking-wider text-slate-400">Top Project</p>
+                <h3 className="font-mono text-xs font-bold text-amber-500 truncate mt-1" title={analyticsData?.metrics?.mostDownloadedProject}>
+                  {isAnalyticsLoading ? '...' : analyticsData?.metrics?.mostDownloadedProject ?? '—'}
+                </h3>
+              </div>
+              <div className="h-10 w-10 rounded-lg border border-amber-500/10 bg-amber-500/5 flex items-center justify-center text-amber-500 shrink-0">
+                <Clock className="h-5 w-5" />
+              </div>
+            </div>
+          </div>
+
+          {/* DOWNLOAD AUDIT LOGS LIST */}
+          <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#0d0d0f] overflow-hidden">
+            <div className="p-5 border-b border-white/[0.04] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h3 className="font-mono text-xs font-black uppercase tracking-wider text-slate-300">Download Audit Logs</h3>
+                <p className="font-sans text-[11px] text-slate-500 mt-0.5">Real-time immutable database security transfer logs</p>
+              </div>
+              <button
+                onClick={fetchAnalytics}
+                disabled={isAnalyticsLoading}
+                className="px-3 py-1.5 rounded-lg font-mono text-[9px] uppercase font-black bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <RefreshCw className={`h-3 w-3 ${isAnalyticsLoading ? 'animate-spin' : ''}`} /> Refresh
+              </button>
+            </div>
+
+            {analyticsError && (
+              <div className="p-5 text-center text-xs text-red-400 font-sans border-b border-white/[0.04]">
+                ⚠️ {analyticsError}
+              </div>
+            )}
+
+            {/* logs table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-white/[0.04] bg-[#09090b] font-mono text-[9px] uppercase font-black tracking-wider text-slate-500">
+                    <th className="p-4 pl-6">Recipient / Email</th>
+                    <th className="p-4">University</th>
+                    <th className="p-4">Requested File</th>
+                    <th className="p-4">Timestamp</th>
+                    <th className="p-4">IP Address</th>
+                    <th className="p-4 pr-6 text-right">Result</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.02]">
+                  {isAnalyticsLoading ? (
+                    [...Array(5)].map((_, i) => (
+                      <tr key={i} className="animate-pulse">
+                        <td className="p-4 pl-6"><div className="h-3 bg-white/5 rounded-md w-32" /></td>
+                        <td className="p-4"><div className="h-3 bg-white/5 rounded-md w-28" /></td>
+                        <td className="p-4"><div className="h-3 bg-white/5 rounded-md w-36" /></td>
+                        <td className="p-4"><div className="h-3 bg-white/5 rounded-md w-24" /></td>
+                        <td className="p-4"><div className="h-3 bg-white/5 rounded-md w-20" /></td>
+                        <td className="p-4 pr-6 text-right"><div className="h-5 bg-white/5 rounded-full w-14 ml-auto" /></td>
+                      </tr>
+                    ))
+                  ) : !analyticsData?.logs || analyticsData.logs.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-xs font-sans text-slate-500">
+                        No download transaction logs found in secure database storage.
+                      </td>
+                    </tr>
+                  ) : (
+                    analyticsData.logs.map((log: any) => (
+                      <tr key={log.id} className="hover:bg-white/[0.01] transition-colors font-sans text-xs text-slate-300">
+                        <td className="p-4 pl-6 font-medium text-white">{log.email}</td>
+                        <td className="p-4 text-slate-400">{log.university}</td>
+                        <td className="p-4 font-mono text-[10px] text-purple-300 font-semibold">{log.project}</td>
+                        <td className="p-4 text-slate-400 font-mono text-[10px]">{log.downloadTime}</td>
+                        <td className="p-4 text-slate-500 font-mono text-[10px]">{log.downloadIP}</td>
+                        <td className="p-4 pr-6 text-right">
+                          {log.result === 'success' ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-mono uppercase font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                              SUCCESS
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-mono uppercase font-black bg-red-500/10 text-red-400 border border-red-500/20">
+                              FAILED
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* FOOTER ACTION TO RETURN TO PORTFOLIO */}
       <div className="flex justify-center pt-4">
