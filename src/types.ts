@@ -76,4 +76,6 @@ export type NavTab =
   | 'downloads' 
   | 'resume' 
   | 'contact'
-  | 'access-request';
+  | 'access-request'
+  | 'admin'
+  | 'admin-dashboard';

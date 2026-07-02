@@ -11,6 +11,7 @@ import About from './components/About';
 import Resume from './components/Resume';
 import Contact from './components/Contact';
 import AccessRequest from './components/AccessRequest';
+import AdminLogin from './components/AdminLogin';
 import SiliconCopilot from './components/copilot/SiliconCopilot';
 
 import WorkstationDashboard from './components/WorkstationDashboard';
@@ -28,7 +29,18 @@ import {
 } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<NavTab>('home');
+  const [activeTab, setActiveTab] = useState<NavTab>(() => {
+    const path = window.location.pathname;
+    if (path === '/admin') return 'admin';
+    if (path === '/admin/dashboard') return 'admin-dashboard';
+    if (path === '/request-access') return 'access-request';
+    const cleanPath = path.replace(/^\//, '');
+    const knownTabs: NavTab[] = ['home', 'about', 'projects', 'downloads', 'resume', 'contact', 'access-request', 'admin', 'admin-dashboard'];
+    if (knownTabs.includes(cleanPath as any)) {
+      return cleanPath as NavTab;
+    }
+    return 'home';
+  });
   const [simTab, setSimTab] = useState<'pipeline' | 'cache' | 'memory'>('pipeline');
   
   // Overlays State
@@ -89,6 +101,50 @@ export default function App() {
       console.error(e);
     }
   }, [activeTab]);
+
+  // Synchronize activeTab state with URL path
+  useEffect(() => {
+    const currentPath = window.location.pathname;
+    let targetPath = '/';
+    if (activeTab === 'admin') {
+      targetPath = '/admin';
+    } else if (activeTab === 'admin-dashboard') {
+      targetPath = '/admin/dashboard';
+    } else if (activeTab === 'access-request') {
+      targetPath = '/request-access';
+    } else if (activeTab !== 'home') {
+      targetPath = `/${activeTab}`;
+    }
+
+    if (currentPath !== targetPath) {
+      window.history.pushState({ tab: activeTab }, '', targetPath);
+    }
+  }, [activeTab]);
+
+  // Handle browser back/forward buttons (popstate)
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const path = window.location.pathname;
+      if (path === '/admin') {
+        setActiveTab('admin');
+      } else if (path === '/admin/dashboard') {
+        setActiveTab('admin-dashboard');
+      } else if (path === '/request-access') {
+        setActiveTab('access-request');
+      } else {
+        const cleanPath = path.replace(/^\//, '');
+        const knownTabs: NavTab[] = ['home', 'about', 'projects', 'downloads', 'resume', 'contact', 'access-request', 'admin', 'admin-dashboard'];
+        if (knownTabs.includes(cleanPath as any)) {
+          setActiveTab(cleanPath as NavTab);
+        } else {
+          setActiveTab('home');
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   useEffect(() => {
     if (searchQuery.trim().length > 2) {
@@ -467,6 +523,35 @@ Tapeouts: RV32IM SoC – 5-Stage Pipelined RISC-V Processor (TSMC 7nm), L2 MESI 
         {/* ACCESS REQUEST VIEW */}
         {activeTab === 'access-request' && (
           <AccessRequest onReturn={() => setActiveTab('home')} />
+        )}
+
+        {/* ADMIN LOGIN VIEW */}
+        {activeTab === 'admin' && (
+          <AdminLogin 
+            onLoginSuccess={() => setActiveTab('admin-dashboard')} 
+            onReturn={() => setActiveTab('home')} 
+          />
+        )}
+
+        {/* ADMIN DASHBOARD VIEW */}
+        {activeTab === 'admin-dashboard' && (
+          <div className="py-24 text-center max-w-xl mx-auto px-4" id="admin-dashboard-placeholder">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.08)] bg-[#1a1a1a] text-[#a78bfa] mb-6">
+              <Cpu className="h-6 w-6" />
+            </div>
+            <h1 className="font-mono text-2xl font-extrabold uppercase text-[#a78bfa] tracking-tight mb-4">
+              ADMINISTRATIVE DASHBOARD
+            </h1>
+            <p className="font-sans text-sm text-slate-400 mb-8 leading-relaxed">
+              Authentication successful. The administrator interface is fully initialized, secure session cookie set, and waiting for database streaming authorizations.
+            </p>
+            <button
+              onClick={() => setActiveTab('home')}
+              className="rounded-lg border border-[rgba(255,255,255,0.12)] bg-[#121212] px-6 py-2.5 font-mono text-[10px] uppercase font-bold tracking-wider text-slate-400 hover:text-white hover:border-slate-500 transition-all cursor-pointer"
+            >
+              Return to Portfolio
+            </button>
+          </div>
         )}
           </motion.div>
         </AnimatePresence>
