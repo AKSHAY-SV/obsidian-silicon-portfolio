@@ -75,4 +75,5 @@ export type NavTab =
   | 'projects' 
   | 'downloads' 
   | 'resume' 
-  | 'contact';
+  | 'contact'
+  | 'access-request';

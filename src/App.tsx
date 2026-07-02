@@ -10,6 +10,7 @@ import DownloadCenter from './components/DownloadCenter';
 import About from './components/About';
 import Resume from './components/Resume';
 import Contact from './components/Contact';
+import AccessRequest from './components/AccessRequest';
 import SiliconCopilot from './components/copilot/SiliconCopilot';
 
 import WorkstationDashboard from './components/WorkstationDashboard';
@@ -460,6 +461,11 @@ Tapeouts: RV32IM SoC – 5-Stage Pipelined RISC-V Processor (TSMC 7nm), L2 MESI 
 
         {/* CONTACT VIEW */}
         {activeTab === 'contact' && <Contact />}
+
+        {/* ACCESS REQUEST VIEW */}
+        {activeTab === 'access-request' && (
+          <AccessRequest onReturn={() => setActiveTab('home')} />
+        )}
           </motion.div>
         </AnimatePresence>
       </main>
