@@ -24,7 +24,7 @@ export default function DownloadButton({ downloadPath, assetName, onDownloadStar
     const baseUrl = (import.meta as any).env?.BASE_URL || '/';
     const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
     const cleanPath = downloadPath.startsWith('/') ? downloadPath.slice(1) : downloadPath;
-    const downloadUrl = `${cleanBaseUrl}${cleanPath}`;
+    const downloadUrl = encodeURI(`${cleanBaseUrl}${cleanPath}`);
 
     // Create a native anchor element to trigger browser's native download behavior
     const link = document.createElement('a');

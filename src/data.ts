@@ -577,7 +577,7 @@ export const DOWNLOAD_ASSETS: DownloadAsset[] = [
     size: '14.2 MB',
     status: 'Verified',
     fileType: 'Pipeline Architecture Documentation',
-    downloadPath: 'downloads/8 bit CPU.zip'
+    downloadPath: 'downloads/8 Bit CPU.zip'
   },
   {
     id: 'l2-cache-gate-netlist',
