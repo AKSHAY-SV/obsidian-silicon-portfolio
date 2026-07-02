@@ -26,7 +26,8 @@ export default function TopNavBar({
     { id: 'projects', label: 'Projects' },
     { id: 'downloads', label: 'Downloads' },
     { id: 'resume', label: 'Resume' },
-    { id: 'contact', label: 'Contact' }
+    { id: 'contact', label: 'Contact' },
+    { id: 'access-request', label: 'Request Access' }
   ];
 
   return (

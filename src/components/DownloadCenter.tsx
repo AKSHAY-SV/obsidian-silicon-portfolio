@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { DOWNLOAD_ASSETS } from '../data';
 import { DownloadAsset } from '../types';
-import { FileCode, Layers, FileText, Cpu, CheckCircle } from 'lucide-react';
+import { FileCode, Layers, FileText, Cpu, CheckCircle, ArrowUpRight, Lock } from 'lucide-react';
 import DownloadButton from './DownloadButton';
 
-export default function DownloadCenter() {
+interface DownloadCenterProps {
+  onRequestAccess: () => void;
+}
+
+export default function DownloadCenter({ onRequestAccess }: DownloadCenterProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [downloadSuccessMessage, setDownloadSuccessMessage] = useState<string | null>(null);
 
@@ -34,16 +38,25 @@ export default function DownloadCenter() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         
         {/* Header Title */}
-        <div className="mb-8 text-center md:text-left">
-          <span className="font-mono text-xs font-semibold uppercase tracking-widest text-[#a78bfa]">
-            Engineering Download Center
-          </span>
-          <h1 className="mt-2 font-sans text-4xl font-extrabold tracking-tight text-white md:text-5xl">
-            HARDWARE RESOURCES & NETLISTS
-          </h1>
-          <p className="mt-3 font-sans text-base text-[#94a3b8]">
-            Acquire fully-synthesizable digital cores, floorplan database exchange formats (DEF), simulated VCD waveforms, and hardware reference manuals.
-          </p>
+        <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="max-w-3xl text-center md:text-left">
+            <span className="font-mono text-xs font-semibold uppercase tracking-widest text-[#a78bfa]">
+              Engineering Download Center
+            </span>
+            <h1 className="mt-2 font-sans text-4xl font-extrabold tracking-tight text-white md:text-5xl">
+              HARDWARE RESOURCES & NETLISTS
+            </h1>
+            <p className="mt-3 font-sans text-base text-[#94a3b8]">
+              Acquire fully-synthesizable digital cores, floorplan database exchange formats (DEF), simulated VCD waveforms, and hardware reference manuals.
+            </p>
+          </div>
+          <button
+            onClick={onRequestAccess}
+            className="shrink-0 w-full md:w-auto rounded-lg bg-gradient-to-r from-[#a78bfa] to-[#c084fc] px-6 py-3.5 font-sans text-xs font-bold uppercase tracking-[0.12em] text-[#0a0a0a] hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-[#a78bfa]/10 duration-200 cursor-pointer flex items-center justify-center gap-2"
+            id="download-center-request-access-cta"
+          >
+            Request Project Access <ArrowUpRight className="h-4 w-4" />
+          </button>
         </div>
 
         {/* Global Download Notification banner */}
@@ -79,8 +92,24 @@ export default function DownloadCenter() {
               ))}
             </div>
 
-            <div className="mt-8 border-t border-[rgba(255,255,255,0.06)] pt-4 font-sans text-[11px] text-[#94a3b8] leading-relaxed">
-              Restricted physical layout files require GPG signature authentication. Verified netlists carry compiled synthesis stamps.
+            <div className="mt-8 border-t border-[rgba(255,255,255,0.06)] pt-4 space-y-4">
+              <p className="font-sans text-[11px] text-[#94a3b8] leading-relaxed">
+                Restricted physical layout files require GPG signature authentication. Verified netlists carry compiled synthesis stamps.
+              </p>
+              <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3.5 font-sans text-[11px]">
+                <div className="flex items-center gap-1.5 font-mono text-[9px] uppercase font-bold text-amber-400 mb-1">
+                  <Lock className="h-3 w-3" /> Secure Resource Locker
+                </div>
+                <p className="text-slate-400 leading-normal mb-3">
+                  Need access to restricted tapes, secure RTL repositories, or post-layout simulation logs?
+                </p>
+                <button
+                  onClick={onRequestAccess}
+                  className="w-full rounded bg-[#a78bfa]/10 border border-[#a78bfa]/20 px-3 py-1.5 font-mono text-[9px] font-bold uppercase tracking-wider text-[#a78bfa] hover:bg-[#a78bfa]/20 transition-all cursor-pointer text-center"
+                >
+                  Request Full Access
+                </button>
+              </div>
             </div>
           </div>
 

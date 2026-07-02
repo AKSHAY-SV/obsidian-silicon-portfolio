@@ -454,7 +454,9 @@ Tapeouts: RV32IM SoC – 5-Stage Pipelined RISC-V Processor (TSMC 7nm), L2 MESI 
         {activeTab === 'projects' && <ProjectsLibrary projects={projects} />}
 
         {/* DOWNLOAD CENTER VIEW */}
-        {activeTab === 'downloads' && <DownloadCenter />}
+        {activeTab === 'downloads' && (
+          <DownloadCenter onRequestAccess={() => setActiveTab('access-request')} />
+        )}
 
         {/* RESUME VIEW */}
         {activeTab === 'resume' && <Resume />}
