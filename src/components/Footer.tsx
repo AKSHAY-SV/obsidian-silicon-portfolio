@@ -5,10 +5,29 @@ import { NavTab } from '../types';
 interface FooterProps {
   setActiveTab: (tab: NavTab) => void;
   onSystemStatusOpen: () => void;
+  onSecureDoubleClick?: () => void;
 }
 
-export default function Footer({ setActiveTab, onSystemStatusOpen }: FooterProps) {
+export default function Footer({ setActiveTab, onSystemStatusOpen, onSecureDoubleClick }: FooterProps) {
   const currentYear = new Date().getFullYear();
+  
+  // Track clicks for hidden interaction
+  const clickData = React.useRef({ count: 0, lastTime: 0 });
+  
+  const handleSecureClick = () => {
+    const now = Date.now();
+    if (now - clickData.current.lastTime < 2000) {
+      clickData.current.count += 1;
+    } else {
+      clickData.current.count = 1;
+    }
+    clickData.current.lastTime = now;
+    
+    if (clickData.current.count >= 2) {
+      onSecureDoubleClick?.();
+      clickData.current.count = 0; // reset
+    }
+  };
 
   return (
     <footer className="w-full border-t border-[rgba(255,255,255,0.06)] bg-[#0c0c0c] pt-12 pb-6">
@@ -104,7 +123,14 @@ export default function Footer({ setActiveTab, onSystemStatusOpen }: FooterProps
             </div>
             <div className="flex items-center gap-1.5 text-[#94a3b8] text-xs font-mono">
               <Shield className="h-3.5 w-3.5 text-[#a78bfa]" />
-              Secure SHA-256 Signoff Enabled
+              <span 
+                onClick={handleSecureClick}
+                onDoubleClick={onSecureDoubleClick}
+                className="cursor-default select-none"
+              >
+                Secure
+              </span>{' '}
+              SHA-256 Signoff Enabled
             </div>
           </div>
 

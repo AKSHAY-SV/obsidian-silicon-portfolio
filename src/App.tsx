@@ -12,7 +12,9 @@ import Resume from './components/Resume';
 import Contact from './components/Contact';
 import AccessRequest from './components/AccessRequest';
 import AdminLogin from './components/AdminLogin';
+import AdminLoginModal from './components/AdminLoginModal';
 import SiliconCopilot from './components/copilot/SiliconCopilot';
+import { auth } from './firebase/firebase';
 
 import WorkstationDashboard from './components/WorkstationDashboard';
 import EngineeringRoadmap from './components/EngineeringRoadmap';
@@ -42,6 +44,8 @@ export default function App() {
     return 'home';
   });
   const [simTab, setSimTab] = useState<'pipeline' | 'cache' | 'memory'>('pipeline');
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState<boolean>(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
   
   // Overlays State
   const [searchOpen, setSearchOpen] = useState(false);
@@ -145,6 +149,19 @@ export default function App() {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  // Enforce administrator auth for the admin-dashboard
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      const adminEmail = 'crazyplayz61@gmail.com';
+      const isAuthorized = !!(user && user.email && user.email.toLowerCase() === adminEmail.toLowerCase());
+      setIsAdminAuthenticated(isAuthorized);
+      if (activeTab === 'admin-dashboard' && !isAuthorized) {
+        setActiveTab('home');
+      }
+    });
+    return () => unsubscribe();
+  }, [activeTab]);
 
   useEffect(() => {
     if (searchQuery.trim().length > 2) {
@@ -534,7 +551,7 @@ Tapeouts: RV32IM SoC – 5-Stage Pipelined RISC-V Processor (TSMC 7nm), L2 MESI 
         )}
 
         {/* ADMIN DASHBOARD VIEW */}
-        {activeTab === 'admin-dashboard' && (
+        {activeTab === 'admin-dashboard' && isAdminAuthenticated && (
           <div className="py-24 text-center max-w-xl mx-auto px-4" id="admin-dashboard-placeholder">
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.08)] bg-[#1a1a1a] text-[#a78bfa] mb-6">
               <Cpu className="h-6 w-6" />
@@ -561,6 +578,16 @@ Tapeouts: RV32IM SoC – 5-Stage Pipelined RISC-V Processor (TSMC 7nm), L2 MESI 
       <Footer
         setActiveTab={setActiveTab}
         onSystemStatusOpen={() => setResumeOpen(true)}
+        onSecureDoubleClick={() => setIsAdminModalOpen(true)}
+      />
+
+      <AdminLoginModal
+        isOpen={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
+        onLoginSuccess={() => {
+          setIsAdminModalOpen(false);
+          setActiveTab('admin-dashboard');
+        }}
       />
 
       {/* OVERLAY 1: CMD+K GLOBAL FUZZY SEARCH MODAL */}
