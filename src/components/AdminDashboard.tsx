@@ -98,6 +98,54 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
   // Update Tracking State for Buttons (Disable & Loader)
   const [updatingRequests, setUpdatingRequests] = useState<Record<string, 'approving' | 'rejecting'>>({});
   
+  // Track notification email states
+  const [emailStatuses, setEmailStatuses] = useState<Record<string, {
+    status: 'idle' | 'sending' | 'success' | 'failed';
+    error?: string;
+  }>>({});
+
+  const sendAutomaticEmail = async (id: string, type: 'approve' | 'reject', name: string, email: string) => {
+    if (!email) return;
+    setEmailStatuses(prev => ({
+      ...prev,
+      [id]: { status: 'sending' }
+    }));
+
+    try {
+      const downloadPortalLink = `${window.location.origin}/downloads`;
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          type,
+          name,
+          email,
+          downloadPortalLink
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to send email API response');
+      }
+
+      setEmailStatuses(prev => ({
+        ...prev,
+        [id]: { status: 'success' }
+      }));
+      addToast(`Automatic ${type} notification email sent to ${email}`);
+    } catch (err: any) {
+      console.error('Email send error:', err);
+      setEmailStatuses(prev => ({
+        ...prev,
+        [id]: { status: 'failed', error: err.message || 'Network error' }
+      }));
+      addToast(`Email failed to send. Retry?`, 'error');
+    }
+  };
+  
   // Custom Premium Toast System
   interface ToastNotification {
     id: string;
@@ -150,6 +198,11 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
     const docPath = `portfolio_access_requests/${id}`;
     const docRef = doc(db, 'portfolio_access_requests', id);
     setUpdatingRequests(prev => ({ ...prev, [id]: 'approving' }));
+    
+    const reqData = requests.find(r => r.id === id);
+    const name = reqData?.name || 'Researcher';
+    const email = reqData?.email || '';
+
     try {
       const adminEmail = auth.currentUser?.email || 'authenticated-admin';
       await updateDoc(docRef, {
@@ -160,6 +213,10 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
         rejectedBy: null
       });
       addToast(`Request approved successfully by ${adminEmail}`);
+      
+      if (email) {
+        sendAutomaticEmail(id, 'approve', name, email);
+      }
     } catch (err) {
       try {
         handleFirestoreError(err, OperationType.APPROVE, docPath);
@@ -179,6 +236,11 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
     const docPath = `portfolio_access_requests/${id}`;
     const docRef = doc(db, 'portfolio_access_requests', id);
     setUpdatingRequests(prev => ({ ...prev, [id]: 'rejecting' }));
+    
+    const reqData = requests.find(r => r.id === id);
+    const name = reqData?.name || 'Researcher';
+    const email = reqData?.email || '';
+
     try {
       const adminEmail = auth.currentUser?.email || 'authenticated-admin';
       await updateDoc(docRef, {
@@ -189,6 +251,10 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
         approvedBy: null
       });
       addToast(`Request rejected successfully by ${adminEmail}`);
+      
+      if (email) {
+        sendAutomaticEmail(id, 'reject', name, email);
+      }
     } catch (err) {
       try {
         handleFirestoreError(err, OperationType.REJECT, docPath);
@@ -664,6 +730,29 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
                                 <div className="text-[9px] text-slate-500 mt-0.5 font-mono">
                                   {formatDate(req.approvedAt)}
                                 </div>
+                                {emailStatuses[req.id || '']?.status === 'sending' && (
+                                  <div className="mt-1 flex items-center justify-end gap-1 text-[9px] font-mono text-purple-400 select-none">
+                                    <Loader2 className="h-2.5 w-2.5 animate-spin" /> Sending email...
+                                  </div>
+                                )}
+                                {emailStatuses[req.id || '']?.status === 'success' && (
+                                  <div className="mt-1 text-[9px] font-mono text-emerald-500 select-none">
+                                    ✓ Email sent
+                                  </div>
+                                )}
+                                {emailStatuses[req.id || '']?.status === 'failed' && (
+                                  <div className="mt-1 flex flex-col items-end gap-1">
+                                    <span className="text-[9px] text-red-400 font-mono">
+                                      Email failed to send
+                                    </span>
+                                    <button
+                                      onClick={() => req.id && sendAutomaticEmail(req.id, 'approve', req.name, req.email)}
+                                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 font-mono text-[9px] uppercase font-bold tracking-wider transition-all cursor-pointer"
+                                    >
+                                      Retry?
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             ) : (
                               <div className="text-right">
@@ -676,6 +765,29 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
                                 <div className="text-[9px] text-slate-500 mt-0.5 font-mono">
                                   {formatDate(req.rejectedAt)}
                                 </div>
+                                {emailStatuses[req.id || '']?.status === 'sending' && (
+                                  <div className="mt-1 flex items-center justify-end gap-1 text-[9px] font-mono text-purple-400 select-none">
+                                    <Loader2 className="h-2.5 w-2.5 animate-spin" /> Sending email...
+                                  </div>
+                                )}
+                                {emailStatuses[req.id || '']?.status === 'success' && (
+                                  <div className="mt-1 text-[9px] font-mono text-emerald-500 select-none">
+                                    ✓ Email sent
+                                  </div>
+                                )}
+                                {emailStatuses[req.id || '']?.status === 'failed' && (
+                                  <div className="mt-1 flex flex-col items-end gap-1">
+                                    <span className="text-[9px] text-red-400 font-mono">
+                                      Email failed to send
+                                    </span>
+                                    <button
+                                      onClick={() => req.id && sendAutomaticEmail(req.id, 'reject', req.name, req.email)}
+                                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 font-mono text-[9px] uppercase font-bold tracking-wider transition-all cursor-pointer"
+                                    >
+                                      Retry?
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
@@ -773,25 +885,89 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
                         </button>
                       </div>
                     ) : req.status === 'approved' ? (
-                      <div className="border-t border-[rgba(255,255,255,0.04)] pt-3 mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 text-xs text-slate-400 font-sans">
-                        <span className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-emerald-400 font-black">
-                          ✓ Approved
-                        </span>
-                        <div className="flex flex-col text-left sm:text-right">
-                          <span className="text-slate-300">by {req.approvedBy || 'Admin'}</span>
-                          <span className="text-[10px] text-slate-500 mt-0.5 font-mono">{formatDate(req.approvedAt)}</span>
+                      <>
+                        <div className="border-t border-[rgba(255,255,255,0.04)] pt-3 mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 text-xs text-slate-400 font-sans">
+                          <span className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-emerald-400 font-black">
+                            ✓ Approved
+                          </span>
+                          <div className="flex flex-col text-left sm:text-right">
+                            <span className="text-slate-300">by {req.approvedBy || 'Admin'}</span>
+                            <span className="text-[10px] text-slate-500 mt-0.5 font-mono">{formatDate(req.approvedAt)}</span>
+                          </div>
                         </div>
-                      </div>
+                        {req.id && emailStatuses[req.id] && (
+                          <div className="border-t border-[rgba(255,255,255,0.04)] pt-2.5 mt-2.5 flex justify-between items-center text-[10px] font-sans">
+                            <span className="text-slate-500 font-mono uppercase text-[9px]">Notification Email</span>
+                            <div>
+                              {emailStatuses[req.id].status === 'sending' && (
+                                <span className="flex items-center gap-1 font-mono text-purple-400 animate-pulse">
+                                  <Loader2 className="h-2.5 w-2.5 animate-spin" /> Sending...
+                                </span>
+                              )}
+                              {emailStatuses[req.id].status === 'success' && (
+                                <span className="font-mono text-emerald-500">
+                                  ✓ Sent successfully
+                                </span>
+                              )}
+                              {emailStatuses[req.id].status === 'failed' && (
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-red-400">
+                                    ⚠ Failed
+                                  </span>
+                                  <button
+                                    onClick={() => req.id && sendAutomaticEmail(req.id, 'approve', req.name, req.email)}
+                                    className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 font-mono text-[9px] uppercase font-bold tracking-wider cursor-pointer"
+                                  >
+                                    Retry?
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </>
                     ) : (
-                      <div className="border-t border-[rgba(255,255,255,0.04)] pt-3 mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 text-xs text-slate-400 font-sans">
-                        <span className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-red-400 font-black">
-                          ✕ Rejected
-                        </span>
-                        <div className="flex flex-col text-left sm:text-right">
-                          <span className="text-slate-300">by {req.rejectedBy || 'Admin'}</span>
-                          <span className="text-[10px] text-slate-500 mt-0.5 font-mono">{formatDate(req.rejectedAt)}</span>
+                      <>
+                        <div className="border-t border-[rgba(255,255,255,0.04)] pt-3 mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 text-xs text-slate-400 font-sans">
+                          <span className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-red-400 font-black">
+                            ✕ Rejected
+                          </span>
+                          <div className="flex flex-col text-left sm:text-right">
+                            <span className="text-slate-300">by {req.rejectedBy || 'Admin'}</span>
+                            <span className="text-[10px] text-slate-500 mt-0.5 font-mono">{formatDate(req.rejectedAt)}</span>
+                          </div>
                         </div>
-                      </div>
+                        {req.id && emailStatuses[req.id] && (
+                          <div className="border-t border-[rgba(255,255,255,0.04)] pt-2.5 mt-2.5 flex justify-between items-center text-[10px] font-sans">
+                            <span className="text-slate-500 font-mono uppercase text-[9px]">Notification Email</span>
+                            <div>
+                              {emailStatuses[req.id].status === 'sending' && (
+                                <span className="flex items-center gap-1 font-mono text-purple-400 animate-pulse">
+                                  <Loader2 className="h-2.5 w-2.5 animate-spin" /> Sending...
+                                </span>
+                              )}
+                              {emailStatuses[req.id].status === 'success' && (
+                                <span className="font-mono text-emerald-500">
+                                  ✓ Sent successfully
+                                </span>
+                              )}
+                              {emailStatuses[req.id].status === 'failed' && (
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-red-400">
+                                    ⚠ Failed
+                                  </span>
+                                  <button
+                                    onClick={() => req.id && sendAutomaticEmail(req.id, 'reject', req.name, req.email)}
+                                    className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 font-mono text-[9px] uppercase font-bold tracking-wider cursor-pointer"
+                                  >
+                                    Retry?
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 );
