@@ -83,12 +83,11 @@ Specialties: ASIC Design, RTL Design, Processor Architecture, FPGA Development, 
 --------------------------------------------------------------------------------
 CORE PROJECTS:
 1. RV32IM Processor (Synthesizable, compliant CPU core)
-2. Five Stage Pipeline (Classic hazard-bypassing microarchitecture)
+2. Five Stage Pipeline RV32IM (Classic hazard-bypassing microarchitecture)
 3. Cache Memory (MESI Multi-core Coherent Set Associative Cache)
-4. RV32IM SoC (7nm Edge-AI system integrating accelerator and ring bus)
-5. APB UART Peripheral (AMBA mapped Tx/Rx FIFO register interface)
-6. Mixed Signal ADC (8-bit 1 MS/s Successive Approximation Register ADC)
-7. 8-bit Computer (TTL gate breadboard microcomputer from scratch)`;
+4. APB UART Peripheral (AMBA mapped Tx/Rx FIFO register interface)
+5. Mixed Signal ADC (8-bit 1 MS/s Successive Approximation Register ADC)
+6. 8 bit CPU (TTL gate breadboard microcomputer from scratch)`;
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -290,13 +289,12 @@ CORE PROJECTS:
     { title: "Logic Design", year: "Phase 1", note: "Basic combinational logic gates, boolean algebra, multiplexers, and decoders." },
     { title: "Finite State Machines", year: "Phase 2", note: "Moore & Mealy sequential logic, sequential registers, setup/hold constraints." },
     { title: "UART", year: "Phase 3", note: "Asynchronous transceiver hardware block with parameterized baud counters." },
-    { title: "8-bit Computer", year: "Phase 4", note: "Designed complete TTL breadboard architecture with hardware microcode EEPROMs." },
+    { title: "8-bit CPU", year: "Phase 4", note: "Designed complete TTL breadboard architecture with hardware microcode EEPROMs." },
     { title: "RV32IM Processor", year: "Phase 5", note: "First synthesizable RISC-V digital core implementing base integer & multiply sets." },
-    { title: "Five Stage Pipeline", year: "Phase 6", note: "Introduced classic hazard detection, bypass routing matrices, and execution stages." },
+    { title: "Five Stage Pipeline RV32IM", year: "Phase 6", note: "Introduced classic hazard detection, bypass routing matrices, and execution stages." },
     { title: "Cache Memory", year: "Phase 7", note: "Coherent L1/L2 multi-core set-associative cache controlled via snoop queues." },
-    { title: "System on Chip", year: "Phase 8", note: "Interconnected multi-core RISC-V nodes with a custom systolic array matrix engine." },
-    { title: "RTL to GDSII", year: "Phase 9", note: "Physical ASIC backend compilation under TSMC PDK libraries." },
-    { title: "Future Tapeout", year: "Phase 10", note: "Final digital silicon fabrication signoff with zero negative timing slack." }
+    { title: "RTL to GDSII", year: "Phase 8", note: "Physical ASIC backend compilation under TSMC PDK libraries." },
+    { title: "Future Tapeout", year: "Phase 9", note: "Final digital silicon fabrication signoff with zero negative timing slack." }
   ];
 
   // --------------------------------------------------------------------------
@@ -329,7 +327,7 @@ CORE PROJECTS:
     },
     {
       id: 'five-stage-pipe',
-      name: 'Five Stage Pipeline',
+      name: 'Five Stage Pipeline RV32IM',
       tagline: 'Classic Pipelined CPU with Forwarding & Hazard Bypass',
       category: 'RTL Design',
       image: 'https://images.unsplash.com/photo-1601987177651-8edfe6c20009?q=80&w=600&auto=format&fit=crop',
@@ -374,30 +372,6 @@ CORE PROJECTS:
       waveforms: 'Displays the snoop invalidation bus signals transitioning cache lines from SHARED to INVALID on remote write hits.',
       diagram: 'Shows the Tag/Data arrays aligned to snoop buses and LRU logic units.',
       futureImprovements: 'Scaling the coherence scheme to support directory-based tracking for larger core clusters.'
-    },
-    {
-      id: 'rv32im-soc',
-      name: 'RV32IM SoC',
-      tagline: 'Edge AI System on Chip (7nm FinFET Prototype)',
-      category: 'ASIC',
-      image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=600&auto=format&fit=crop',
-      techStack: ['Chisel', 'Verilog', 'TSMC 7nm PDK', 'Synopsys Design Compiler', 'Innovus'],
-      description: 'Integrated system-on-chip connecting four RISC-V CPU cores with a high-performance Systolic Array NPU matrix engine over a 128-bit AXI4 ring bus.',
-      metrics: [
-        { label: 'Die Size', value: '12.54 mm²' },
-        { label: 'Throughput', value: '4.2 TOPS @ 800MHz' },
-        { label: 'Clock Speed', value: '1.2 GHz Signoff' }
-      ],
-      overview: 'The RV32IM SoC is a prototype ASIC SoC designed to process deep integer operations at the edge with minimum power consumption. Synthesised using a state-of-the-art TSMC 7nm technology library.',
-      architecture: 'Features a quad-core processor cluster connected to a customized 16x16 MAC systolic matrix multiplication array via non-blocking AXI4 network-on-chip rings.',
-      challenges: 'High dynamic IR drop across the NPU matrix core during peak MAC execution created severe clock tree timing setup failures.',
-      solutions: 'Reconfigured the power distribution network, designing a robust dual-grid mesh in Metal 7 & Metal 8 while doubling local decap cells near matrix multipliers.',
-      verification: 'Full-chip verification mapping global memory space, register configurations, and interrupt handling.',
-      simulation: 'Annotated Gate-Level Simulations (GLS) ensuring skew bounding and setup/hold margins remain within spec under layout conditions.',
-      documentation: 'Synthesis configuration manuals, power budgets, and physical floorplan DEF files.',
-      waveforms: 'Clock Tree Synthesis (CTS) insertion traces illustrating global clock skew bounding under 35ps across the die.',
-      diagram: 'SoC layout showing CPU blocks, NPU arrays, and LPDDR memory interfaces.',
-      futureImprovements: 'Integrating low-power sub-VT clock cells to decrease standby leakage power.'
     },
     {
       id: 'apb-uart-periph',
@@ -449,7 +423,7 @@ CORE PROJECTS:
     },
     {
       id: 'eight-bit-computer',
-      name: '8-bit TTL Breadboard Computer',
+      name: '8 bit CPU',
       tagline: 'Custom Discrete TTL Logic Microcomputer',
       category: 'Digital Design',
       image: 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48?q=80&w=600&auto=format&fit=crop',
@@ -577,7 +551,6 @@ CORE PROJECTS:
     { title: "RTL Design", desc: "Expert SystemVerilog coding with zero latch warnings, utilizing parameterizable blocks." },
     { title: "Processor Architecture", desc: "Microarchitecting high-efficiency RISC-V cores with pipelined multipliers and bypass routes." },
     { title: "Cache Design", desc: "Set-associative L1/L2 caches with MESI state registers and multi-core snooping logic." },
-    { title: "System on Chip", desc: "Integrating application processors, hardware accelerators, and AXI4 routing interconnects." },
     { title: "Digital Verification", desc: "Functional coverage checking using Cocotb, UVM, and SystemVerilog Assertions." },
     { title: "Physical Design", desc: "Timing closures, floorplanning DEF controls, and custom power grid layouts." }
   ];
@@ -587,7 +560,6 @@ CORE PROJECTS:
   // --------------------------------------------------------------------------
   const achievementsList = [
     { category: "Processor Architecture", title: "RV32IM Design", desc: "Micro-architected and validated a fully compliant RISC-V processor core from scratch." },
-    { category: "SoC Integration", title: "RV32IM SoC Synthesis", desc: "Successfully mapped multi-core cluster nets and accelerators onto TSMC 7nm technology libraries." },
     { category: "RTL Development", title: "Verilog / SV Mastery", desc: "Wrote 45+ clean, synthesizable hardware modules with flawless latch-free logs." },
     { category: "Hardware Verification", title: "99.8% Test Coverage", desc: "Verified system core memory maps using Cocotb Python randomized assertions." },
     { category: "FPGA Implementation", title: "Timing Closure", desc: "Achieved clean constraints clocking at 150MHz on Artix-7 and UltraScale+ FPGA targets." },
@@ -618,8 +590,7 @@ CORE PROJECTS:
     { id: 'resume-pdf', name: 'Akshay_Srikrishnan_Resume.pdf', desc: 'Standard print-optimized CV detailing full academic and technical history.', type: 'PDF Document', size: '240 KB' },
     { id: 'proj-rpt', name: 'RV32IM_Core_Design_Report.pdf', desc: 'Detailed 24-page report outlining pipeline, hazard matrix, and Verilator verification tests.', type: 'Technical Report', size: '1.8 MB' },
     { id: 'res-paper', name: 'Power_Mesh_IR_Drop_7nm.pdf', desc: 'Technical white paper investigating dual-grid power distributions in sub-10nm processes.', type: 'Research Paper', size: '1.2 MB' },
-    { id: 'arch-doc', name: 'MESI_Coherent_Cache_Spec.pdf', desc: 'Architecture specification including MESI state transition matrices and formal SV assertions.', type: 'Architecture Spec', size: '980 KB' },
-    { id: 'pres-slides', name: 'RV32IM_SoC_Tapeout_Slides.pdf', desc: 'Presentation deck from the physical design review highlighting floorplan DEF and clock tree results.', type: 'Slides Deck', size: '3.4 MB' }
+    { id: 'arch-doc', name: 'MESI_Coherent_Cache_Spec.pdf', desc: 'Architecture specification including MESI state transition matrices and formal SV assertions.', type: 'Architecture Spec', size: '980 KB' }
   ];
 
   // --------------------------------------------------------------------------

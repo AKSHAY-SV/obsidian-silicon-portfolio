@@ -544,7 +544,7 @@ export const DOWNLOAD_ASSETS: DownloadAsset[] = [
     size: '142 KB',
     status: 'Verified',
     fileType: 'SystemVerilog / RTL Source',
-    downloadPath: ''
+    downloadPath: 'downloads/SoC with Custom RISC-V Processor.zip'
   },
   {
     id: 'axi4-crossbar-test',
@@ -555,7 +555,7 @@ export const DOWNLOAD_ASSETS: DownloadAsset[] = [
     size: '890 KB',
     status: 'Verified',
     fileType: 'RTL Peripheral Design',
-    downloadPath: ''
+    downloadPath: 'downloads/APB Compliant UART Peripheral with Integrated FSM.zip'
   },
   {
     id: 'rv32im-floorplan-def',
@@ -566,7 +566,7 @@ export const DOWNLOAD_ASSETS: DownloadAsset[] = [
     size: '14.2 MB',
     status: 'Verified',
     fileType: 'Pipeline Architecture Documentation',
-    downloadPath: ''
+    downloadPath: 'downloads/RV32IM 5-Stage Pipeline.zip'
   },
   {
     id: '8-bit-cpu',
@@ -577,7 +577,7 @@ export const DOWNLOAD_ASSETS: DownloadAsset[] = [
     size: '14.2 MB',
     status: 'Verified',
     fileType: 'Pipeline Architecture Documentation',
-    downloadPath: ''
+    downloadPath: 'downloads/8 bit CPU.zip'
   },
   {
     id: 'l2-cache-gate-netlist',
@@ -588,6 +588,6 @@ export const DOWNLOAD_ASSETS: DownloadAsset[] = [
     size: '4.1 MB',
     status: 'Verified',
     fileType: 'Cache RTL & Verification',
-    downloadPath: ''
+    downloadPath: 'downloads/Cache Memory.zip'
   }
 ];
