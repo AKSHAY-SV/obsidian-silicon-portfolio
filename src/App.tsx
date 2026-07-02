@@ -13,6 +13,7 @@ import Contact from './components/Contact';
 import AccessRequest from './components/AccessRequest';
 import AdminLogin from './components/AdminLogin';
 import AdminLoginModal from './components/AdminLoginModal';
+import AdminDashboard from './components/AdminDashboard';
 import SiliconCopilot from './components/copilot/SiliconCopilot';
 import { auth } from './firebase/firebase';
 
@@ -552,23 +553,7 @@ Tapeouts: RV32IM SoC – 5-Stage Pipelined RISC-V Processor (TSMC 7nm), L2 MESI 
 
         {/* ADMIN DASHBOARD VIEW */}
         {activeTab === 'admin-dashboard' && isAdminAuthenticated && (
-          <div className="py-24 text-center max-w-xl mx-auto px-4" id="admin-dashboard-placeholder">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg border border-[rgba(255,255,255,0.08)] bg-[#1a1a1a] text-[#a78bfa] mb-6">
-              <Cpu className="h-6 w-6" />
-            </div>
-            <h1 className="font-mono text-2xl font-extrabold uppercase text-[#a78bfa] tracking-tight mb-4">
-              ADMINISTRATIVE DASHBOARD
-            </h1>
-            <p className="font-sans text-sm text-slate-400 mb-8 leading-relaxed">
-              Authentication successful. The administrator interface is fully initialized, secure session cookie set, and waiting for database streaming authorizations.
-            </p>
-            <button
-              onClick={() => setActiveTab('home')}
-              className="rounded-lg border border-[rgba(255,255,255,0.12)] bg-[#121212] px-6 py-2.5 font-mono text-[10px] uppercase font-bold tracking-wider text-slate-400 hover:text-white hover:border-slate-500 transition-all cursor-pointer"
-            >
-              Return to Portfolio
-            </button>
-          </div>
+          <AdminDashboard onReturn={() => setActiveTab('home')} />
         )}
           </motion.div>
         </AnimatePresence>

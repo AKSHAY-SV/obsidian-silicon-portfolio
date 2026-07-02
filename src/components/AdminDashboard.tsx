@@ -1,0 +1,715 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  collection, 
+  doc, 
+  updateDoc, 
+  onSnapshot, 
+  serverTimestamp, 
+  Timestamp 
+} from 'firebase/firestore';
+import { db, auth } from '../firebase/firebase';
+import { AccessRequest } from '../types/accessRequest';
+import { 
+  Search, 
+  Filter, 
+  Check, 
+  X, 
+  Cpu, 
+  Shield, 
+  Clock, 
+  CheckCircle, 
+  XCircle, 
+  Users, 
+  ArrowUpDown, 
+  Inbox, 
+  Loader2, 
+  ChevronDown,
+  Lock,
+  Building,
+  Mail,
+  FileText,
+  HelpCircle,
+  Sparkles
+} from 'lucide-react';
+
+// Required error handling formats for Firestore Operations per integration rules
+enum OperationType {
+  LIST_REALTIME = 'list_realtime',
+  APPROVE = 'approve',
+  REJECT = 'reject'
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  }
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo: auth.currentUser?.providerData?.map(provider => ({
+        providerId: provider.providerId,
+        email: provider.email,
+      })) || []
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error in Admin Dashboard: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
+interface AdminDashboardProps {
+  onReturn: () => void;
+}
+
+export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
+  const [requests, setRequests] = useState<AccessRequest[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Filter and Search States
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
+
+  // Tooltip tracking for Purpose Hover
+  const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
+
+  // Real-time listener for access requests
+  useEffect(() => {
+    const colPath = 'portfolio_access_requests';
+    const colRef = collection(db, colPath);
+
+    const unsubscribe = onSnapshot(
+      colRef,
+      (snapshot) => {
+        const fetchedRequests: AccessRequest[] = [];
+        snapshot.forEach((docSnap) => {
+          fetchedRequests.push({
+            ...docSnap.data(),
+            id: docSnap.id,
+          } as AccessRequest);
+        });
+        setRequests(fetchedRequests);
+        setIsLoading(false);
+      },
+      (err) => {
+        setIsLoading(false);
+        try {
+          handleFirestoreError(err, OperationType.LIST_REALTIME, colPath);
+        } catch (wrappedErr: any) {
+          setError('Failed to sync database. Unauthorized or insufficient permissions.');
+        }
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  // Update Status Handlers
+  const handleApprove = async (id: string) => {
+    const docPath = `portfolio_access_requests/${id}`;
+    const docRef = doc(db, 'portfolio_access_requests', id);
+    try {
+      await updateDoc(docRef, {
+        status: 'approved',
+        approvedAt: serverTimestamp(),
+        rejectedAt: null
+      });
+    } catch (err) {
+      try {
+        handleFirestoreError(err, OperationType.APPROVE, docPath);
+      } catch (wrappedErr: any) {
+        alert('Action failed: Permission denied or database mismatch.');
+      }
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    const docPath = `portfolio_access_requests/${id}`;
+    const docRef = doc(db, 'portfolio_access_requests', id);
+    try {
+      await updateDoc(docRef, {
+        status: 'rejected',
+        rejectedAt: serverTimestamp(),
+        approvedAt: null
+      });
+    } catch (err) {
+      try {
+        handleFirestoreError(err, OperationType.REJECT, docPath);
+      } catch (wrappedErr: any) {
+        alert('Action failed: Permission denied or database mismatch.');
+      }
+    }
+  };
+
+  // Date Formatting Helper
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return '—';
+    const date = typeof timestamp.toDate === 'function' ? timestamp.toDate() : new Date(timestamp);
+    const day = String(date.getDate()).padStart(2, '0');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    let hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; 
+    const formattedHours = String(hours).padStart(2, '0');
+    return `${day} ${month} ${year} ${formattedHours}:${minutes} ${ampm}`;
+  };
+
+  // Statistic Computations
+  const totalCount = requests.length;
+  const pendingCount = requests.filter(r => r.status === 'pending').length;
+  const approvedCount = requests.filter(r => r.status === 'approved').length;
+  const rejectedCount = requests.filter(r => r.status === 'rejected').length;
+
+  // Search & Filters Application
+  const filteredAndSortedRequests = requests
+    .filter((req) => {
+      // Status Match
+      if (statusFilter !== 'all' && req.status !== statusFilter) return false;
+
+      // Text Search Match (Name, Email, University, Request ID)
+      if (!searchTerm.trim()) return true;
+      const term = searchTerm.toLowerCase();
+      const nameMatch = req.name?.toLowerCase().includes(term) || false;
+      const emailMatch = req.email?.toLowerCase().includes(term) || false;
+      const univMatch = req.university?.toLowerCase().includes(term) || false;
+      const idMatch = req.id?.toLowerCase().includes(term) || false;
+
+      return nameMatch || emailMatch || univMatch || idMatch;
+    })
+    .sort((a, b) => {
+      const getMs = (ts: any): number => {
+        if (!ts) return 0;
+        if (typeof ts.toDate === 'function') return ts.toDate().getTime();
+        if (typeof ts.seconds === 'number') return ts.seconds * 1000;
+        return new Date(ts).getTime();
+      };
+      const timeA = getMs(a.createdAt);
+      const timeB = getMs(b.createdAt);
+      return sortBy === 'newest' ? timeB - timeA : timeA - timeB;
+    });
+
+  // Skeleton Loaders
+  const SkeletonRows = () => (
+    <>
+      {[...Array(5)].map((_, i) => (
+        <tr key={i} className="border-b border-[rgba(255,255,255,0.04)] animate-pulse">
+          <td className="p-4"><div className="h-3 bg-slate-800/80 rounded-md w-16" /></td>
+          <td className="p-4"><div className="h-3 bg-slate-800/80 rounded-md w-24" /></td>
+          <td className="p-4"><div className="h-3 bg-slate-800/80 rounded-md w-28" /></td>
+          <td className="p-4"><div className="h-3 bg-slate-800/80 rounded-md w-36" /></td>
+          <td className="p-4"><div className="h-3 bg-slate-800/80 rounded-md w-32" /></td>
+          <td className="p-4"><div className="h-3 bg-slate-800/80 rounded-md w-40" /></td>
+          <td className="p-4"><div className="h-6 bg-slate-800/80 rounded-full w-16" /></td>
+          <td className="p-4 flex gap-2"><div className="h-7 bg-slate-800/80 rounded-md w-16" /><div className="h-7 bg-slate-800/80 rounded-md w-16" /></td>
+        </tr>
+      ))}
+    </>
+  );
+
+  const SkeletonCards = () => (
+    <div className="space-y-4">
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="border border-[rgba(255,255,255,0.06)] bg-[#121212] p-5 rounded-xl space-y-3 animate-pulse">
+          <div className="flex justify-between items-center"><div className="h-4 bg-slate-800 rounded w-20" /><div className="h-6 bg-slate-800 rounded-full w-16" /></div>
+          <div className="h-4 bg-slate-800 rounded w-1/2" />
+          <div className="h-3 bg-slate-800 rounded w-2/3" />
+          <div className="h-12 bg-slate-800 rounded-lg w-full" />
+          <div className="flex gap-2 pt-2"><div className="h-8 bg-slate-800 rounded w-1/2" /><div className="h-8 bg-slate-800 rounded w-1/2" /></div>
+        </div>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8" id="admin-dashboard-container">
+      
+      {/* TOP HEADER SECTION */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b border-[rgba(255,255,255,0.06)] pb-8" id="admin-dashboard-header">
+        <div className="flex items-start gap-4">
+          <div className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#161618] text-[#a78bfa] shadow-lg shadow-[#a78bfa]/5">
+            <Cpu className="h-7 w-7" />
+          </div>
+          <div>
+            <h1 className="font-mono text-2xl sm:text-3xl font-black tracking-tight text-white uppercase flex items-center gap-2">
+              ADMINISTRATIVE DASHBOARD
+            </h1>
+            <p className="font-sans text-sm text-slate-400 mt-1.5 leading-relaxed">
+              Manage portfolio access requests and system authorizations.
+            </p>
+          </div>
+        </div>
+
+        {/* Access Granted Badge */}
+        <div 
+          className="flex items-center gap-3.5 bg-emerald-500/5 border border-emerald-500/20 px-5 py-3 rounded-xl shadow-md shadow-emerald-500/5 self-start md:self-auto"
+          id="admin-status-badge"
+        >
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-black shadow-lg shadow-emerald-500/20">
+            <Check className="h-4 w-4 stroke-[3]" />
+          </div>
+          <div>
+            <div className="font-mono text-xs font-black tracking-wider text-emerald-400 uppercase flex items-center gap-1">
+              ACCESS GRANTED <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+            </div>
+            <div className="font-sans text-[10px] text-emerald-400/70 font-semibold uppercase tracking-wider mt-0.5">
+              Secure Session Active
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {error && (
+        <div className="p-4 border border-red-500/20 bg-red-500/5 text-red-400 rounded-xl text-xs font-sans flex items-center gap-3">
+          <XCircle className="h-5 w-5 shrink-0 text-red-500" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* STATISTIC CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="admin-statistics-grid">
+        
+        {/* Card 1: Pending (Orange) */}
+        <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#121214] p-5 flex items-center justify-between relative overflow-hidden group hover:border-amber-500/30 transition-all duration-300">
+          <div className="absolute top-0 left-0 w-1.5 h-full bg-amber-500" />
+          <div className="space-y-1">
+            <p className="font-sans text-[11px] uppercase font-bold tracking-wider text-slate-400">
+              Pending Requests
+            </p>
+            <h3 className="font-mono text-3xl font-black text-amber-500 tracking-tight">
+              {isLoading ? '...' : pendingCount}
+            </h3>
+          </div>
+          <div className="h-10 w-10 rounded-lg border border-amber-500/10 bg-amber-500/5 flex items-center justify-center text-amber-500">
+            <Clock className="h-5 w-5" />
+          </div>
+        </div>
+
+        {/* Card 2: Approved (Green) */}
+        <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#121214] p-5 flex items-center justify-between relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-300">
+          <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-500" />
+          <div className="space-y-1">
+            <p className="font-sans text-[11px] uppercase font-bold tracking-wider text-slate-400">
+              Approved
+            </p>
+            <h3 className="font-mono text-3xl font-black text-emerald-400 tracking-tight">
+              {isLoading ? '...' : approvedCount}
+            </h3>
+          </div>
+          <div className="h-10 w-10 rounded-lg border border-emerald-500/10 bg-emerald-500/5 flex items-center justify-center text-emerald-500">
+            <CheckCircle className="h-5 w-5" />
+          </div>
+        </div>
+
+        {/* Card 3: Rejected (Red) */}
+        <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#121214] p-5 flex items-center justify-between relative overflow-hidden group hover:border-red-500/30 transition-all duration-300">
+          <div className="absolute top-0 left-0 w-1.5 h-full bg-red-500" />
+          <div className="space-y-1">
+            <p className="font-sans text-[11px] uppercase font-bold tracking-wider text-slate-400">
+              Rejected
+            </p>
+            <h3 className="font-mono text-3xl font-black text-red-500 tracking-tight">
+              {isLoading ? '...' : rejectedCount}
+            </h3>
+          </div>
+          <div className="h-10 w-10 rounded-lg border border-red-500/10 bg-red-500/5 flex items-center justify-center text-red-500">
+            <XCircle className="h-5 w-5" />
+          </div>
+        </div>
+
+        {/* Card 4: Total (Purple) */}
+        <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#121214] p-5 flex items-center justify-between relative overflow-hidden group hover:border-[#a78bfa]/30 transition-all duration-300">
+          <div className="absolute top-0 left-0 w-1.5 h-full bg-[#a78bfa]" />
+          <div className="space-y-1">
+            <p className="font-sans text-[11px] uppercase font-bold tracking-wider text-slate-400">
+              Total Requests
+            </p>
+            <h3 className="font-mono text-3xl font-black text-[#a78bfa] tracking-tight">
+              {isLoading ? '...' : totalCount}
+            </h3>
+          </div>
+          <div className="h-10 w-10 rounded-lg border border-[#a78bfa]/10 bg-[#a78bfa]/5 flex items-center justify-center text-[#a78bfa]">
+            <Users className="h-5 w-5" />
+          </div>
+        </div>
+
+      </div>
+
+      {/* FILTER & SEARCH CONTROL BLOCK */}
+      <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#0d0d0f] p-4 flex flex-col md:flex-row gap-4 items-center justify-between" id="admin-controls-panel">
+        
+        {/* Search */}
+        <div className="relative w-full md:max-w-md">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+          <input
+            type="text"
+            placeholder="Search by ID, Name, Email, University..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-[#121214] border border-[rgba(255,255,255,0.06)] rounded-lg pl-10 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:border-[#a78bfa]/50 focus:ring-[#a78bfa]/20 transition-all"
+            id="admin-search-input"
+          />
+        </div>
+
+        {/* Filters and Sorting */}
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+          
+          {/* Status Dropdown */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <span className="font-mono text-[10px] uppercase font-bold text-slate-500 hidden sm:inline">Status</span>
+            <div className="relative w-full sm:w-40">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="w-full bg-[#121214] border border-[rgba(255,255,255,0.06)] rounded-lg px-3 py-2 text-xs text-white appearance-none focus:outline-none focus:ring-1 focus:border-[#a78bfa]/50 transition-all cursor-pointer font-sans"
+                id="admin-status-filter"
+              >
+                <option value="all">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500 pointer-events-none" />
+            </div>
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <span className="font-mono text-[10px] uppercase font-bold text-slate-500 hidden sm:inline">Sort</span>
+            <div className="relative w-full sm:w-44">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="w-full bg-[#121214] border border-[rgba(255,255,255,0.06)] rounded-lg px-3 py-2 text-xs text-white appearance-none focus:outline-none focus:ring-1 focus:border-[#a78bfa]/50 transition-all cursor-pointer font-sans"
+                id="admin-sort-filter"
+              >
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+              </select>
+              <ArrowUpDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500 pointer-events-none" />
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* LARGE DASHBOARD CONTAINER WITH PORTFOLIO REQUESTS */}
+      <div 
+        className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#121214] overflow-hidden shadow-xl"
+        id="admin-table-card"
+      >
+        {/* Card Header */}
+        <div className="border-b border-[rgba(255,255,255,0.06)] bg-[#161618] px-6 py-5">
+          <div className="flex items-center gap-2 text-[#a78bfa] mb-1">
+            <FileText className="h-4 w-4" />
+            <h2 className="font-mono text-sm font-black tracking-wider uppercase">
+              Portfolio Access Requests
+            </h2>
+          </div>
+          <p className="font-sans text-xs text-slate-400">
+            Pending access approval requests.
+          </p>
+        </div>
+
+        {/* LOADING STATE SKELETON */}
+        {isLoading ? (
+          <div className="p-6">
+            <div className="hidden md:block">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-[rgba(255,255,255,0.06)] text-left font-mono text-[10px] uppercase tracking-wider text-slate-500">
+                    <th className="p-4">Request ID</th>
+                    <th className="p-4">Created</th>
+                    <th className="p-4">Name</th>
+                    <th className="p-4">Email</th>
+                    <th className="p-4">University / Company</th>
+                    <th className="p-4">Purpose</th>
+                    <th className="p-4">Status</th>
+                    <th className="p-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <SkeletonRows />
+                </tbody>
+              </table>
+            </div>
+            <div className="md:hidden">
+              <SkeletonCards />
+            </div>
+          </div>
+        ) : filteredAndSortedRequests.length === 0 ? (
+          
+          /* EMPTY STATE */
+          <div className="p-16 text-center" id="admin-empty-state">
+            <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[#161618] text-slate-600 mb-6">
+              <Inbox className="h-8 w-8" />
+            </div>
+            <p className="font-mono text-xs uppercase font-extrabold tracking-wider text-slate-400 mb-1.5">
+              No requests found
+            </p>
+            <p className="font-sans text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+              No portfolio access requests currently match the search query, status filters, or are registered in the system.
+            </p>
+          </div>
+        ) : (
+          
+          /* CONTENT VIEWS */
+          <>
+            {/* DESKTOP & TABLET VIEW TABLE */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full border-collapse text-left" id="admin-requests-table">
+                <thead>
+                  <tr className="border-b border-[rgba(255,255,255,0.06)] bg-[#161618]/50 text-left font-mono text-[10px] uppercase tracking-wider text-[#a78bfa] select-none">
+                    <th className="p-4 pl-6">Request ID</th>
+                    <th className="p-4">Created</th>
+                    <th className="p-4">Name</th>
+                    <th className="p-4">Email</th>
+                    <th className="p-4">University / Company</th>
+                    <th className="p-4">Purpose</th>
+                    <th className="p-4">Status</th>
+                    <th className="p-4 pr-6 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[rgba(255,255,255,0.04)]">
+                  {filteredAndSortedRequests.map((req, index) => {
+                    const isPending = req.status === 'pending';
+                    const idShort = req.id ? (req.id.length > 8 ? `${req.id.substring(0, 8).toUpperCase()}` : req.id.toUpperCase()) : 'N/A';
+                    
+                    return (
+                      <tr 
+                        key={req.id || index} 
+                        className={`group border-b border-[rgba(255,255,255,0.03)] hover:bg-[#a78bfa]/[0.02] transition-colors duration-200 ${
+                          index % 2 === 0 ? 'bg-transparent' : 'bg-[#18181b]/20'
+                        }`}
+                      >
+                        {/* Request ID */}
+                        <td className="p-4 pl-6 font-mono text-xs font-black text-slate-400 group-hover:text-white transition-colors">
+                          {idShort}
+                        </td>
+
+                        {/* Created Date */}
+                        <td className="p-4 font-sans text-xs text-slate-400 font-medium">
+                          {formatDate(req.createdAt)}
+                        </td>
+
+                        {/* Name */}
+                        <td className="p-4 font-sans text-xs font-semibold text-white">
+                          {req.name}
+                        </td>
+
+                        {/* Email */}
+                        <td className="p-4 font-sans text-xs text-slate-400 group-hover:text-slate-300 transition-colors">
+                          {req.email}
+                        </td>
+
+                        {/* University / Company */}
+                        <td className="p-4 font-sans text-xs text-slate-400">
+                          {req.university}
+                        </td>
+
+                        {/* Purpose (with custom absolute tooltip on hover) */}
+                        <td className="p-4 max-w-xs relative">
+                          <div 
+                            className="text-xs text-slate-400 line-clamp-2 select-text cursor-help group/purpose"
+                            onMouseEnter={() => req.id && setActiveTooltipId(req.id)}
+                            onMouseLeave={() => setActiveTooltipId(null)}
+                          >
+                            {req.purpose}
+
+                            {/* Custom hovering Tooltip */}
+                            <AnimatePresence>
+                              {activeTooltipId === req.id && req.purpose.length > 40 && (
+                                <motion.div 
+                                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                  className="absolute z-50 left-0 bottom-full mb-3 w-72 p-4 rounded-xl border border-[rgba(255,255,255,0.12)] bg-[#161618] shadow-2xl pointer-events-none text-slate-200 font-sans text-xs font-normal leading-relaxed text-left normal-case"
+                                  style={{ transform: 'translateX(-10%)' }}
+                                >
+                                  <div className="font-mono text-[9px] uppercase tracking-wider text-[#a78bfa] mb-1 font-black">Full Request Purpose</div>
+                                  {req.purpose}
+                                  <div className="absolute top-full left-1/4 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#161618]" />
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        </td>
+
+                        {/* Status Pills */}
+                        <td className="p-4">
+                          {req.status === 'pending' && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono uppercase font-black tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20 shadow-sm shadow-amber-500/5">
+                              <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                              Pending
+                            </span>
+                          )}
+                          {req.status === 'approved' && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono uppercase font-black tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm shadow-emerald-500/5">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                              Approved
+                            </span>
+                          )}
+                          {req.status === 'rejected' && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono uppercase font-black tracking-wider bg-red-500/10 text-red-400 border border-red-500/20 shadow-sm shadow-red-500/5">
+                              <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                              Rejected
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Actions buttons */}
+                        <td className="p-4 pr-6 text-right">
+                          <div className="flex items-center justify-end gap-2.5">
+                            {isPending ? (
+                              <>
+                                <button
+                                  onClick={() => req.id && handleApprove(req.id)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase font-black tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-black hover:border-emerald-400 hover:shadow-lg hover:shadow-emerald-500/20 transition-all duration-200 active:scale-95 cursor-pointer"
+                                  title="Approve Request"
+                                >
+                                  <Check className="h-3 w-3 stroke-[2.5]" /> Approve
+                                </button>
+                                <button
+                                  onClick={() => req.id && handleReject(req.id)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase font-black tracking-wider bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-black hover:border-red-400 hover:shadow-lg hover:shadow-red-500/20 transition-all duration-200 active:scale-95 cursor-pointer"
+                                  title="Reject Request"
+                                >
+                                  <X className="h-3 w-3 stroke-[2.5]" /> Reject
+                                </button>
+                              </>
+                            ) : (
+                              <span className="text-[10px] font-mono uppercase text-slate-500 font-black tracking-widest mr-2 select-none">
+                                {req.status === 'approved' ? 'AUTHORIZED' : 'DECLINED'}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* MOBILE VIEW CARDS */}
+            <div className="md:hidden p-4 space-y-4">
+              {filteredAndSortedRequests.map((req, index) => {
+                const isPending = req.status === 'pending';
+                const idShort = req.id ? (req.id.length > 8 ? `${req.id.substring(0, 8).toUpperCase()}` : req.id.toUpperCase()) : 'N/A';
+                
+                return (
+                  <div 
+                    key={req.id || index}
+                    className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#161618]/50 p-5 space-y-4 relative overflow-hidden"
+                  >
+                    {/* Status accent indicator */}
+                    <div className={`absolute top-0 left-0 w-full h-[2px] ${
+                      req.status === 'pending' ? 'bg-amber-500' :
+                      req.status === 'approved' ? 'bg-emerald-500' : 'bg-red-500'
+                    }`} />
+
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-mono text-xs font-black text-slate-500">ID: {idShort}</div>
+                        <div className="font-sans text-[10px] text-slate-500 mt-0.5">{formatDate(req.createdAt)}</div>
+                      </div>
+                      
+                      {/* Status pill */}
+                      <div>
+                        {req.status === 'pending' && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-mono uppercase font-black tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                            Pending
+                          </span>
+                        )}
+                        {req.status === 'approved' && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-mono uppercase font-black tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            Approved
+                          </span>
+                        )}
+                        {req.status === 'rejected' && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-mono uppercase font-black tracking-wider bg-red-500/10 text-red-400 border border-red-500/20">
+                            Rejected
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <h4 className="font-sans text-sm font-extrabold text-white">{req.name}</h4>
+                      
+                      <div className="space-y-1 text-xs text-slate-400 font-sans">
+                        <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-slate-500 shrink-0" /> {req.email}</div>
+                        <div className="flex items-center gap-2"><Building className="h-3.5 w-3.5 text-slate-500 shrink-0" /> {req.university}</div>
+                      </div>
+
+                      <div className="border-t border-[rgba(255,255,255,0.04)] pt-3 mt-3">
+                        <span className="font-mono text-[9px] uppercase tracking-wider text-slate-500 block mb-1">Purpose</span>
+                        <p className="font-sans text-xs text-slate-300 leading-relaxed bg-[#101012] border border-[rgba(255,255,255,0.03)] p-3 rounded-lg">
+                          {req.purpose}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Actions panel */}
+                    {isPending && (
+                      <div className="grid grid-cols-2 gap-2.5 pt-2">
+                        <button
+                          onClick={() => req.id && handleApprove(req.id)}
+                          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-mono uppercase font-black tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-black hover:border-emerald-400 transition-all cursor-pointer"
+                        >
+                          <Check className="h-3.5 w-3.5 stroke-[2.5]" /> Approve
+                        </button>
+                        <button
+                          onClick={() => req.id && handleReject(req.id)}
+                          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-mono uppercase font-black tracking-wider bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-black hover:border-red-400 transition-all cursor-pointer"
+                        >
+                          <X className="h-3.5 w-3.5 stroke-[2.5]" /> Reject
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* FOOTER ACTION TO RETURN TO PORTFOLIO */}
+      <div className="flex justify-center pt-4">
+        <button
+          onClick={onReturn}
+          className="rounded-lg border border-[rgba(255,255,255,0.12)] bg-[#121214] px-8 py-3.5 font-mono text-[11px] uppercase font-bold tracking-wider text-slate-400 hover:text-white hover:border-[#a78bfa]/50 hover:shadow-lg hover:shadow-[#a78bfa]/5 transition-all cursor-pointer flex items-center gap-2"
+        >
+          Return to Portfolio Home
+        </button>
+      </div>
+
+    </div>
+  );
+}
