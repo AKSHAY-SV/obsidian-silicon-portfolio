@@ -34,7 +34,7 @@ import {
 export default function App() {
   const [activeTab, setActiveTab] = useState<NavTab>(() => {
     const path = window.location.pathname;
-    if (path === '/admin') return 'admin';
+    if (path === '/admin' || path === '/admin/login') return 'admin';
     if (path === '/admin/dashboard') return 'admin-dashboard';
     if (path === '/request-access') return 'access-request';
     const cleanPath = path.replace(/^\//, '');
@@ -112,7 +112,7 @@ export default function App() {
     const currentPath = window.location.pathname;
     let targetPath = '/';
     if (activeTab === 'admin') {
-      targetPath = '/admin';
+      targetPath = '/admin/login';
     } else if (activeTab === 'admin-dashboard') {
       targetPath = '/admin/dashboard';
     } else if (activeTab === 'access-request') {
@@ -130,7 +130,7 @@ export default function App() {
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
       const path = window.location.pathname;
-      if (path === '/admin') {
+      if (path === '/admin' || path === '/admin/login') {
         setActiveTab('admin');
       } else if (path === '/admin/dashboard') {
         setActiveTab('admin-dashboard');
@@ -158,7 +158,7 @@ export default function App() {
       const isAuthorized = !!(user && user.email && user.email.toLowerCase() === adminEmail.toLowerCase());
       setIsAdminAuthenticated(isAuthorized);
       if (activeTab === 'admin-dashboard' && !isAuthorized) {
-        setActiveTab('home');
+        setActiveTab('admin');
       }
     });
     return () => unsubscribe();

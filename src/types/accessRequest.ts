@@ -9,5 +9,7 @@ export interface AccessRequest {
   status: 'pending' | 'approved' | 'rejected';
   createdAt: Timestamp | null;
   approvedAt?: Timestamp | null;
+  approvedBy?: string | null;
   rejectedAt?: Timestamp | null;
+  rejectedBy?: string | null;
 }

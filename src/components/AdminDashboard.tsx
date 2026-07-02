@@ -95,6 +95,25 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
   // Tooltip tracking for Purpose Hover
   const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
 
+  // Update Tracking State for Buttons (Disable & Loader)
+  const [updatingRequests, setUpdatingRequests] = useState<Record<string, 'approving' | 'rejecting'>>({});
+  
+  // Custom Premium Toast System
+  interface ToastNotification {
+    id: string;
+    message: string;
+    type: 'success' | 'error';
+  }
+  const [toasts, setToasts] = useState<ToastNotification[]>([]);
+
+  const addToast = (message: string, type: 'success' | 'error' = 'success') => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4000);
+  };
+
   // Real-time listener for access requests
   useEffect(() => {
     const colPath = 'portfolio_access_requests';
@@ -130,36 +149,58 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
   const handleApprove = async (id: string) => {
     const docPath = `portfolio_access_requests/${id}`;
     const docRef = doc(db, 'portfolio_access_requests', id);
+    setUpdatingRequests(prev => ({ ...prev, [id]: 'approving' }));
     try {
+      const adminEmail = auth.currentUser?.email || 'authenticated-admin';
       await updateDoc(docRef, {
         status: 'approved',
         approvedAt: serverTimestamp(),
-        rejectedAt: null
+        approvedBy: adminEmail,
+        rejectedAt: null,
+        rejectedBy: null
       });
+      addToast(`Request approved successfully by ${adminEmail}`);
     } catch (err) {
       try {
         handleFirestoreError(err, OperationType.APPROVE, docPath);
       } catch (wrappedErr: any) {
-        alert('Action failed: Permission denied or database mismatch.');
+        addToast('Action failed: Permission denied or database mismatch.', 'error');
       }
+    } finally {
+      setUpdatingRequests(prev => {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      });
     }
   };
 
   const handleReject = async (id: string) => {
     const docPath = `portfolio_access_requests/${id}`;
     const docRef = doc(db, 'portfolio_access_requests', id);
+    setUpdatingRequests(prev => ({ ...prev, [id]: 'rejecting' }));
     try {
+      const adminEmail = auth.currentUser?.email || 'authenticated-admin';
       await updateDoc(docRef, {
         status: 'rejected',
         rejectedAt: serverTimestamp(),
-        approvedAt: null
+        rejectedBy: adminEmail,
+        approvedAt: null,
+        approvedBy: null
       });
+      addToast(`Request rejected successfully by ${adminEmail}`);
     } catch (err) {
       try {
         handleFirestoreError(err, OperationType.REJECT, docPath);
       } catch (wrappedErr: any) {
-        alert('Action failed: Permission denied or database mismatch.');
+        addToast('Action failed: Permission denied or database mismatch.', 'error');
       }
+    } finally {
+      setUpdatingRequests(prev => {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      });
     }
   };
 
@@ -470,7 +511,7 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
               <Inbox className="h-8 w-8" />
             </div>
             <p className="font-mono text-xs uppercase font-extrabold tracking-wider text-slate-400 mb-1.5">
-              No requests found
+              No portfolio access requests.
             </p>
             <p className="font-sans text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
               No portfolio access requests currently match the search query, status filters, or are registered in the system.
@@ -588,24 +629,54 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
                             {isPending ? (
                               <>
                                 <button
+                                  disabled={updatingRequests[req.id || ''] !== undefined}
                                   onClick={() => req.id && handleApprove(req.id)}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase font-black tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-black hover:border-emerald-400 hover:shadow-lg hover:shadow-emerald-500/20 transition-all duration-200 active:scale-95 cursor-pointer"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase font-black tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-black hover:border-emerald-400 hover:shadow-lg hover:shadow-emerald-500/20 transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
                                   title="Approve Request"
                                 >
-                                  <Check className="h-3 w-3 stroke-[2.5]" /> Approve
+                                  {updatingRequests[req.id || ''] === 'approving' ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <Check className="h-3 w-3 stroke-[2.5]" />
+                                  )} Approve
                                 </button>
                                 <button
+                                  disabled={updatingRequests[req.id || ''] !== undefined}
                                   onClick={() => req.id && handleReject(req.id)}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase font-black tracking-wider bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-black hover:border-red-400 hover:shadow-lg hover:shadow-red-500/20 transition-all duration-200 active:scale-95 cursor-pointer"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase font-black tracking-wider bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-black hover:border-red-400 hover:shadow-lg hover:shadow-red-500/20 transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
                                   title="Reject Request"
                                 >
-                                  <X className="h-3 w-3 stroke-[2.5]" /> Reject
+                                  {updatingRequests[req.id || ''] === 'rejecting' ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <X className="h-3 w-3 stroke-[2.5]" />
+                                  )} Reject
                                 </button>
                               </>
+                            ) : req.status === 'approved' ? (
+                              <div className="text-right">
+                                <div className="inline-flex items-center gap-1 text-[10px] font-mono uppercase text-emerald-400 font-black tracking-wider bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded-full select-none mb-1">
+                                  ✓ Approved
+                                </div>
+                                <div className="text-[10px] text-slate-400 truncate max-w-[180px] font-medium" title={req.approvedBy || 'Unknown'}>
+                                  by {req.approvedBy || 'Admin'}
+                                </div>
+                                <div className="text-[9px] text-slate-500 mt-0.5 font-mono">
+                                  {formatDate(req.approvedAt)}
+                                </div>
+                              </div>
                             ) : (
-                              <span className="text-[10px] font-mono uppercase text-slate-500 font-black tracking-widest mr-2 select-none">
-                                {req.status === 'approved' ? 'AUTHORIZED' : 'DECLINED'}
-                              </span>
+                              <div className="text-right">
+                                <div className="inline-flex items-center gap-1 text-[10px] font-mono uppercase text-red-400 font-black tracking-wider bg-red-500/10 border border-red-500/25 px-2 py-0.5 rounded-full select-none mb-1">
+                                  ✕ Rejected
+                                </div>
+                                <div className="text-[10px] text-slate-400 truncate max-w-[180px] font-medium" title={req.rejectedBy || 'Unknown'}>
+                                  by {req.rejectedBy || 'Admin'}
+                                </div>
+                                <div className="text-[9px] text-slate-500 mt-0.5 font-mono">
+                                  {formatDate(req.rejectedAt)}
+                                </div>
+                              </div>
                             )}
                           </div>
                         </td>
@@ -676,20 +747,50 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
                     </div>
 
                     {/* Actions panel */}
-                    {isPending && (
+                    {isPending ? (
                       <div className="grid grid-cols-2 gap-2.5 pt-2">
                         <button
+                          disabled={updatingRequests[req.id || ''] !== undefined}
                           onClick={() => req.id && handleApprove(req.id)}
-                          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-mono uppercase font-black tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-black hover:border-emerald-400 transition-all cursor-pointer"
+                          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-mono uppercase font-black tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-black hover:border-emerald-400 transition-all disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
                         >
-                          <Check className="h-3.5 w-3.5 stroke-[2.5]" /> Approve
+                          {updatingRequests[req.id || ''] === 'approving' ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Check className="h-3.5 w-3.5 stroke-[2.5]" />
+                          )} Approve
                         </button>
                         <button
+                          disabled={updatingRequests[req.id || ''] !== undefined}
                           onClick={() => req.id && handleReject(req.id)}
-                          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-mono uppercase font-black tracking-wider bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-black hover:border-red-400 transition-all cursor-pointer"
+                          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-mono uppercase font-black tracking-wider bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-black hover:border-red-400 transition-all disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
                         >
-                          <X className="h-3.5 w-3.5 stroke-[2.5]" /> Reject
+                          {updatingRequests[req.id || ''] === 'rejecting' ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <X className="h-3.5 w-3.5 stroke-[2.5]" />
+                          )} Reject
                         </button>
+                      </div>
+                    ) : req.status === 'approved' ? (
+                      <div className="border-t border-[rgba(255,255,255,0.04)] pt-3 mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 text-xs text-slate-400 font-sans">
+                        <span className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-emerald-400 font-black">
+                          ✓ Approved
+                        </span>
+                        <div className="flex flex-col text-left sm:text-right">
+                          <span className="text-slate-300">by {req.approvedBy || 'Admin'}</span>
+                          <span className="text-[10px] text-slate-500 mt-0.5 font-mono">{formatDate(req.approvedAt)}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="border-t border-[rgba(255,255,255,0.04)] pt-3 mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 text-xs text-slate-400 font-sans">
+                        <span className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-red-400 font-black">
+                          ✕ Rejected
+                        </span>
+                        <div className="flex flex-col text-left sm:text-right">
+                          <span className="text-slate-300">by {req.rejectedBy || 'Admin'}</span>
+                          <span className="text-[10px] text-slate-500 mt-0.5 font-mono">{formatDate(req.rejectedAt)}</span>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -708,6 +809,41 @@ export default function AdminDashboard({ onReturn }: AdminDashboardProps) {
         >
           Return to Portfolio Home
         </button>
+      </div>
+
+      {/* Toast Notifications */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none" id="admin-toasts-container">
+        <AnimatePresence>
+          {toasts.map((toast) => (
+            <motion.div
+              key={toast.id}
+              layout
+              initial={{ opacity: 0, y: 50, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.85, transition: { duration: 0.2 } }}
+              className={`p-4 rounded-xl border shadow-2xl flex items-start gap-3 pointer-events-auto ${
+                toast.type === 'success'
+                  ? 'bg-[#0f1715]/95 border-emerald-500/20 text-emerald-400 shadow-emerald-500/5'
+                  : 'bg-[#1c1212]/95 border-red-500/20 text-red-400 shadow-red-500/5'
+              }`}
+            >
+              {toast.type === 'success' ? (
+                <CheckCircle className="h-5 w-5 shrink-0 text-emerald-500 mt-0.5" />
+              ) : (
+                <XCircle className="h-5 w-5 shrink-0 text-red-500 mt-0.5" />
+              )}
+              <div className="flex-1 font-sans text-xs font-medium leading-relaxed">
+                {toast.message}
+              </div>
+              <button
+                onClick={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
+                className="text-slate-500 hover:text-white transition-colors cursor-pointer shrink-0"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
 
     </div>
