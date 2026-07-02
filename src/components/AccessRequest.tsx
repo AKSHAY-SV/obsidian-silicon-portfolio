@@ -12,7 +12,7 @@ import {
   Mail, 
   User 
 } from 'lucide-react';
-import { submitAccessRequest, getRequestByEmail } from '../services/accessRequestService';
+import { submitAccessRequest } from '../services/accessRequestService';
 
 interface AccessRequestProps {
   onReturn: () => void;
@@ -115,15 +115,7 @@ export default function AccessRequest({ onReturn }: AccessRequestProps) {
       const university = formData.university.trim();
       const purpose = formData.purpose.trim();
 
-      // Check for duplicate pending requests
-      const existingRequest = await getRequestByEmail(email);
-      if (existingRequest && existingRequest.status === 'pending') {
-        setSubmitError('You already have a pending request.');
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Submit new access request
+      // Submit new access request directly (writes/setDoc only, no public reads)
       await submitAccessRequest({
         name,
         email,
